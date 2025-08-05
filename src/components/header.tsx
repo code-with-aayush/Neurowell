@@ -12,9 +12,12 @@ export default function Header() {
           </div>
           <span className="hidden sm:inline">MindSync Monitor</span>
         </Link>
-        <nav>
+        <nav className="flex items-center gap-4">
+          <Button asChild variant="ghost">
+            <Link href="/">Home</Link>
+          </Button>
           <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
-            <Link href="/dashboard">Go to Dashboard</Link>
+            <Link href="/dashboard">Dashboard</Link>
           </Button>
         </nav>
       </div>
