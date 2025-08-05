@@ -47,19 +47,12 @@ export default function Home() {
           </div>
           <div className="relative">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="/hero-image.jpg"
               alt="Woman with biometric data overlay"
               width={600}
               height={400}
               className="rounded-2xl shadow-2xl"
-              data-ai-hint="woman biometric data"
             />
-            <Card className="absolute -bottom-8 right-0 sm:right-8 w-full sm:w-auto max-w-xs shadow-xl animate-fade-in">
-              <CardHeader>
-                <CardTitle className="text-lg">Device Connected</CardTitle>
-                <CardDescription>Your monitoring device is now connected and ready.</CardDescription>
-              </CardHeader>
-            </Card>
           </div>
         </div>
       </section>
