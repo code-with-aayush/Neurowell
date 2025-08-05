@@ -66,6 +66,8 @@ export default function DashboardClient() {
                 try {
                     const sensorData = JSON.parse(jsonString);
                     
+                    setIsMonitoring(false); // Monitoring is done, now generate report
+
                     const now = new Date();
                     const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
 
@@ -89,7 +91,7 @@ export default function DashboardClient() {
                       gsr: last(gsrData)
                     });
 
-                    setIsMonitoring(false);
+                    // Data received, now call report generation
                     handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
 
                 } catch (e) {
@@ -101,7 +103,7 @@ export default function DashboardClient() {
                 // Remove the processed JSON object from the buffer
                 buffer = buffer.substring(jsonEnd + 1);
             }
-            jsonEnd = buffer.indexOf('}', jsonEnd);
+            jsonEnd = buffer.indexOf('}', jsonEnd > -1 ? jsonEnd + 1 : 0);
         }
 
       } catch (err: any) {
@@ -121,7 +123,7 @@ export default function DashboardClient() {
   const handleGenerateReport = async (collectedData: { heartRate: number[], spo2: number[], ecg: number[], gsr: number[]}) => {
     if (isGenerating) return;
 
-    setIsGenerating(true);
+    setIsGenerating(true); // Now in generating state
     setError(null);
     
     const createDataPoint = (value: number, index: number) => ({ time: `${index}s`, value });
@@ -138,7 +140,7 @@ export default function DashboardClient() {
       router.push(result.redirectUrl);
     } else {
       setError(result.message);
-      setIsGenerating(false);
+      setIsGenerating(false); // Stop generating state on error
     }
   };
 
@@ -151,6 +153,7 @@ export default function DashboardClient() {
     setLatestValues(initialLatestValues);
     setError(null);
     setIsMonitoring(true);
+    setIsGenerating(false);
 
     try {
         const textEncoder = new TextEncoder();
