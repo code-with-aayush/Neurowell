@@ -6,9 +6,11 @@ import { BrainCircuit } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -36,12 +38,12 @@ export default function Header() {
           <span className="hidden sm:inline">Neurowell</span>
         </Link>
         <nav className="flex items-center gap-4">
-          <Button asChild variant="ghost">
+          <Button asChild variant={pathname === '/' ? 'secondary' : 'ghost'}>
             <Link href="/">Home</Link>
           </Button>
           {user ? (
             <>
-              <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
+              <Button asChild variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}>
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
               <Button variant="ghost" onClick={handleLogout}>
@@ -50,10 +52,10 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost">
+              <Button asChild variant={pathname === '/login' ? 'secondary' : 'ghost'}>
                 <Link href="/login">Login</Link>
               </Button>
-              <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
+              <Button asChild className="transition-transform hover:scale-105" style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}}>
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </>
