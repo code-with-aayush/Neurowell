@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import { Button } from '@/components/ui/button';
@@ -7,24 +8,7 @@ import { ArrowLeft, Download, TrendingUp, Heart, Zap, Smile, Shield, Activity, B
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-
-const weeklyTrendsData = [
-  { name: 'Mon', stress: 2.8, hr: 75 },
-  { name: 'Tue', stress: 3.1, hr: 78 },
-  { name: 'Wed', stress: 2.5, hr: 72 },
-  { name: 'Thu', stress: 3.5, hr: 82 },
-  { name: 'Fri', stress: 4.0, hr: 85 },
-  { name: 'Sat', stress: 1.8, hr: 68 },
-  { name: 'Sun', stress: 1.5, hr: 65 },
-];
-
-const stressDistributionData = [
-    { name: 'Low', value: 50, fill: '#34D399' },
-    { name: 'Moderate', value: 35, fill: '#FBBF24' },
-    { name: 'High', value: 15, fill: '#F87171' },
-];
 
 const RecommendationIcon = ({ title, className }: { title: string, className?: string }) => {
   const baseClass = "h-6 w-6";
@@ -49,16 +33,14 @@ const PriorityBadge = ({ priority }: {priority: 'HIGH' | 'MEDIUM' | 'LOW' }) => 
 function ReportContent() {
   const searchParams = useSearchParams();
 
-  const summary = searchParams.get('summary') || 'Based on your recent data, your overall health score is 88/100. Your cardiovascular metrics are strong, and stress levels are mostly within a healthy range.';
+  const summary = searchParams.get('summary') || 'No summary available.';
   const recommendationsStr = searchParams.get('suggestions');
-  const recommendations = recommendationsStr ? JSON.parse(recommendationsStr) : [
-    { title: 'Maintain Consistent Sleep', description: 'Aim for 7-8 hours of sleep per night.', priority: 'HIGH' },
-    { title: 'Mindful Stress Management', description: 'Incorporate short mindfulness exercises.', priority: 'MEDIUM' },
-  ];
-  const avgHr = searchParams.get('avgHr') || '74';
-  const avgStress = searchParams.get('avgStress') || '2.0';
+  const recommendations = recommendationsStr ? JSON.parse(recommendationsStr) : [];
+  
+  const avgHr = searchParams.get('avgHr') || 'N/A';
+  const avgStress = searchParams.get('avgStress') || 'N/A';
 
-  const overallScore = summary.match(/\d+\/\d+/)?.[0] || '88/100';
+  const overallScore = summary.match(/\d+\/\d+/)?.[0];
 
 
   return (
@@ -70,10 +52,10 @@ function ReportContent() {
                     <ArrowLeft className="h-4 w-4" />
                     Back to Dashboard
                 </Link>
-                <h1 className="text-3xl font-bold text-gray-800">Weekly Health Report</h1>
+                <h1 className="text-3xl font-bold text-gray-800">Your Health Report</h1>
                 <p className="text-gray-500">Generated on {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => window.print()}>
                 <Download className="mr-2 h-4 w-4" />
                 Export PDF
             </Button>
@@ -81,50 +63,10 @@ function ReportContent() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Average Heart Rate" value={`${avgHr} BPM`} change="+2%" icon={Heart} />
-        <StatCard title="Stress Level" value={`${avgStress} μS`} change="-15%" icon={Zap} trend="down" />
-        <StatCard title="Sleep Quality" value="7.5 hrs" change="+8%" icon={Smile} />
-        <StatCard title="Recovery Score" value="85%" change="+12%" icon={Shield} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold"><TrendingUp className="text-primary"/>Weekly Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={weeklyTrendsData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} />
-                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" axisLine={false} tickLine={false}/>
-                <Tooltip />
-                <Legend />
-                <Bar yAxisId="left" dataKey="stress" fill="#8884d8" name="Stress" radius={[4, 4, 0, 0]}/>
-                <Bar yAxisId="right" dataKey="hr" fill="#82ca9d" name="Heart Rate" radius={[4, 4, 0, 0]}/>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold"><Zap className="text-primary"/>Stress Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                    <Pie data={stressDistributionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                        {stressDistributionData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                    </PieChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
+        <StatCard title="Average Heart Rate" value={`${avgHr} BPM`} icon={Heart} />
+        <StatCard title="Average Stress Level" value={`${avgStress} μS`} icon={Zap} />
+        <StatCard title="Session" value="5s Capture" icon={Activity} />
+         {overallScore && <StatCard title="Overall Score" value={overallScore} icon={Shield} />}
       </div>
 
        <Card className="mb-8">
@@ -132,34 +74,44 @@ function ReportContent() {
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold"><Heart className="text-primary"/>Personalized Recommendations</CardTitle>
             </CardHeader>
            <CardContent>
-               <div className="space-y-4">
-                   {recommendations.map((rec: any, index: number) => (
-                       <RecommendationItem key={index} title={rec.title} description={rec.description} priority={rec.priority} />
-                   ))}
-               </div>
+                {recommendations.length > 0 ? (
+                   <div className="space-y-4">
+                       {recommendations.map((rec: any, index: number) => (
+                           <RecommendationItem key={index} title={rec.title} description={rec.description} priority={rec.priority} />
+                       ))}
+                   </div>
+                ) : (
+                    <p className="text-gray-500">No recommendations were generated for this report.</p>
+                )}
            </CardContent>
        </Card>
 
       <div className="bg-primary/10 text-center p-8 rounded-lg">
-        <h2 className="text-2xl font-bold text-primary">Overall Health Score: {overallScore}</h2>
+        {overallScore ? (
+            <h2 className="text-2xl font-bold text-primary">Overall Health Score: {overallScore}</h2>
+        ) : (
+            <h2 className="text-2xl font-bold text-primary">Report Summary</h2>
+        )}
         <p className="text-primary/80 max-w-2xl mx-auto mt-2">{summary.replace(/Overall Health Score: \d+\/\d+\./, '')}</p>
         <Button asChild className="mt-6">
-            <Link href="/dashboard">Continue Monitoring</Link>
+            <Link href="/dashboard">Monitor Again</Link>
         </Button>
       </div>
     </div>
   );
 }
 
-const StatCard = ({ title, value, change, icon: Icon, trend = 'up' }: { title: string, value: string, change: string, icon: any, trend?: 'up' | 'down' }) => {
-    const changeColor = trend === 'up' ? 'text-green-600' : 'text-red-600';
+const StatCard = ({ title, value, icon: Icon, change }: { title: string, value: string, icon: any, change?: string }) => {
     return (
         <Card>
             <CardContent className="p-4">
-                <p className="text-sm text-gray-500 mb-1">{title}</p>
+                <div className="flex justify-between items-center mb-1">
+                    <p className="text-sm text-gray-500">{title}</p>
+                    <Icon className="h-5 w-5 text-gray-400" />
+                </div>
                 <div className="flex justify-between items-baseline">
                     <p className="text-2xl font-bold">{value}</p>
-                    <p className={`text-sm font-semibold ${changeColor}`}>{change}</p>
+                    {change && <p className={`text-sm font-semibold`}>{change}</p>}
                 </div>
             </CardContent>
         </Card>
