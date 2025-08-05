@@ -75,8 +75,8 @@ void sendData() {
     Serial.print("],\"ecg\":[");
     printFloatArray(ecgReadings, numReadings);
 
-    // End JSON object and send a newline
-    Serial.println("]}");
+    // End JSON object
+    Serial.print("]}");
 
     lcd.setCursor(0, 1);
     lcd.print("Data Sent.");

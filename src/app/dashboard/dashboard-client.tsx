@@ -45,7 +45,7 @@ export default function DashboardClient() {
     if (!readerRef.current) return;
     
     const textDecoder = new TextDecoder();
-    let partialData = '';
+    let buffer = '';
 
     while (keepReading.current) {
       try {
@@ -54,49 +54,56 @@ export default function DashboardClient() {
           break;
         }
         
-        partialData += textDecoder.decode(value, { stream: true });
+        buffer += textDecoder.decode(value, { stream: true });
         
-        // Assuming the Arduino sends the full JSON in one go after monitoring
-        if (partialData.includes('\n')) {
-          const jsonString = partialData.substring(0, partialData.indexOf('\n')).trim();
-           try {
-              const sensorData = JSON.parse(jsonString);
-              
-              const now = new Date();
-              const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
+        // Process complete JSON objects in the buffer
+        let jsonEnd = buffer.indexOf('}');
+        while (jsonEnd !== -1) {
+            const jsonStart = buffer.lastIndexOf('{', jsonEnd);
+            if (jsonStart !== -1) {
+                const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
+                
+                try {
+                    const sensorData = JSON.parse(jsonString);
+                    
+                    const now = new Date();
+                    const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
 
-              const heartRateData = sensorData.heartRate.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-              const spo2Data = sensorData.spo2.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-              const ecgData = sensorData.ecg.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-              const gsrData = sensorData.gsr.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-             
-              setData({
-                heartRate: heartRateData,
-                spo2: spo2Data,
-                ecg: ecgData,
-                gsr: gsrData
-              });
+                    const heartRateData = sensorData.heartRate.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+                    const spo2Data = sensorData.spo2.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+                    const ecgData = sensorData.ecg.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+                    const gsrData = sensorData.gsr.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+                   
+                    setData({
+                      heartRate: heartRateData,
+                      spo2: spo2Data,
+                      ecg: ecgData,
+                      gsr: gsrData
+                    });
 
-              const last = (arr: any[]) => arr.length > 0 ? arr[arr.length - 1].value : 0;
-              setLatestValues({
-                heartRate: last(heartRateData),
-                spo2: last(spo2Data),
-                ecg: last(ecgData),
-                gsr: last(gsrData)
-              });
+                    const last = (arr: any[]) => arr.length > 0 ? arr[arr.length - 1].value : 0;
+                    setLatestValues({
+                      heartRate: last(heartRateData),
+                      spo2: last(spo2Data),
+                      ecg: last(ecgData),
+                      gsr: last(gsrData)
+                    });
 
-              setIsMonitoring(false);
-              handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
+                    setIsMonitoring(false);
+                    handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
 
-
-            } catch (e) {
-              console.warn("Could not parse JSON from serial:", jsonString, e);
-              setError("Received invalid data from device.");
-              setIsMonitoring(false);
+                } catch (e) {
+                  console.warn("Could not parse JSON from serial:", jsonString, e);
+                  setError("Received invalid data from device.");
+                  setIsMonitoring(false);
+                }
+                
+                // Remove the processed JSON object from the buffer
+                buffer = buffer.substring(jsonEnd + 1);
             }
-            // Clear partial data after processing
-            partialData = '';
+            jsonEnd = buffer.indexOf('}', jsonEnd);
         }
+
       } catch (err: any) {
         if (err.name !== 'AbortError') {
             console.error("Error reading from serial port:", err);
