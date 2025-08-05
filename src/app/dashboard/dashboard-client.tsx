@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { useFormState, useFormStatus } from 'react-dom';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
 
@@ -21,37 +20,17 @@ const initialDataState = {
   gsr: [] as DataPoint[],
 };
 
-function SubmitButton({disabled} : {disabled: boolean}) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="outline" disabled={pending || disabled}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating...
-        </>
-      ) : (
-        <>
-          <FileDown className="mr-2 h-4 w-4" />
-          Generate Report
-        </>
-      )}
-    </Button>
-  );
-}
-
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
   const [isMonitoring, setIsMonitoring] = useState(false);
-  const [isCollecting, setIsCollecting] = useState(false);
-  const [isCollectionComplete, setIsCollectionComplete] = useState(false);
-  const [state, formAction] = useFormState(createReport, null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
-    if (isCollecting) {
+    if (isMonitoring) {
       interval = setInterval(() => {
         setData(prevData => {
           const newTime = new Date().toLocaleTimeString();
@@ -72,20 +51,32 @@ export default function DashboardClient() {
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isCollecting]);
+  }, [isMonitoring]);
   
-   useEffect(() => {
-    if (state?.success && state.redirectUrl) {
-      router.push(state.redirectUrl);
-    }
-  }, [state, router]);
+  const handleGenerateReport = async (monitoringData: typeof initialDataState) => {
+    setIsGenerating(true);
+    setError(null);
 
+    const formData = new FormData();
+    formData.append('heartRate', JSON.stringify(monitoringData.heartRate));
+    formData.append('spo2', JSON.stringify(monitoringData.spo2));
+    formData.append('ecg', JSON.stringify(monitoringData.ecg));
+    formData.append('gsr', JSON.stringify(monitoringData.gsr));
+
+    const result = await createReport(null, formData);
+
+    if (result.success && result.redirectUrl) {
+      router.push(result.redirectUrl);
+    } else {
+      setError(result.message);
+    }
+    setIsGenerating(false);
+  };
 
   const startMonitoring = () => {
     setData(initialDataState);
-    setIsCollectionComplete(false);
+    setError(null);
     setIsMonitoring(true);
-    setIsCollecting(true);
     
     if (monitoringTimeoutRef.current) {
       clearTimeout(monitoringTimeoutRef.current);
@@ -93,8 +84,11 @@ export default function DashboardClient() {
 
     monitoringTimeoutRef.current = setTimeout(() => {
       setIsMonitoring(false);
-      setIsCollecting(false);
-      setIsCollectionComplete(true);
+      setData(currentData => {
+        // Pass the most up-to-date data to the report generation function
+        handleGenerateReport(currentData);
+        return currentData;
+      });
     }, 2000);
   };
   
@@ -139,11 +133,16 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-             <Button variant="outline" onClick={startMonitoring} disabled={isCollecting}>
-              {isCollecting ? (
+             <Button variant="outline" onClick={startMonitoring} disabled={isMonitoring || isGenerating}>
+              {isMonitoring ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Monitoring...
+                </>
+              ) : isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Report...
                 </>
               ) : (
                 <>
@@ -152,23 +151,16 @@ export default function DashboardClient() {
                 </>
               )}
             </Button>
-            <form action={formAction}>
-              <input type="hidden" name="heartRate" value={JSON.stringify(data.heartRate)} />
-              <input type="hidden" name="spo2" value={JSON.stringify(data.spo2)} />
-              <input type="hidden" name="ecg" value={JSON.stringify(data.ecg)} />
-              <input type="hidden" name="gsr" value={JSON.stringify(data.gsr)} />
-              <SubmitButton disabled={!isCollectionComplete || isCollecting} />
-            </form>
           </div>
         </header>
 
-         {state && !state.success && state.message && (
+         {error && (
           <Card className="bg-red-50 border-red-200 mb-8">
             <CardContent className="p-4 flex items-center gap-3">
               <AlertCircle className="text-red-600" />
               <div>
                 <CardTitle className="text-base font-semibold text-red-800">Report Generation Failed</CardTitle>
-                <CardDescription className="text-red-600">{state.message}</CardDescription>
+                <CardDescription className="text-red-600">{error}</CardDescription>
               </div>
             </CardContent>
           </Card>
@@ -187,7 +179,7 @@ export default function DashboardClient() {
               </div>
                <div className="flex items-center gap-2 text-gray-600 bg-gray-200 px-3 py-1 rounded-full text-sm font-medium">
                 <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-500'}`} />
-                <span>{isMonitoring ? 'Monitoring Active' : (isCollecting ? 'Initializing...' : 'Monitoring Paused')}</span>
+                <span>{isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}</span>
               </div>
             </div>
           </CardContent>
@@ -201,7 +193,7 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <ChartCard title="ECG Waveform" isPaused={!isCollecting}>
+           <ChartCard title="ECG Waveform" isPaused={!isMonitoring}>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -218,7 +210,7 @@ export default function DashboardClient() {
                </AreaChart>
              </ChartContainer>
           </ChartCard>
-          <ChartCard title="GSR (Stress Level)" isPaused={!isCollecting}>
+          <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring}>
               <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false}/>
