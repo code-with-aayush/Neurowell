@@ -58,7 +58,6 @@ export default function DashboardClient() {
         
         buffer += textDecoder.decode(value, { stream: true });
         
-        // Process complete JSON objects in the buffer
         let jsonEnd = buffer.indexOf('}');
         while (jsonEnd !== -1) {
             const jsonStart = buffer.lastIndexOf('{', jsonEnd);
@@ -67,8 +66,9 @@ export default function DashboardClient() {
                 
                 try {
                     const sensorData = JSON.parse(jsonString);
+                    keepReading.current = false; // Stop reading after getting data
                     
-                    setIsMonitoring(false); // Monitoring is done, now generate report
+                    setIsMonitoring(false);
 
                     const now = new Date();
                     const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
@@ -93,8 +93,9 @@ export default function DashboardClient() {
                       gsr: last(gsrData)
                     });
 
-                    // Data received, now call report generation
                     handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
+                    buffer = buffer.substring(jsonEnd + 1);
+                    break; 
 
                 } catch (e) {
                   console.warn("Could not parse JSON from serial:", jsonString, e);
@@ -102,7 +103,6 @@ export default function DashboardClient() {
                   setIsMonitoring(false);
                 }
                 
-                // Remove the processed JSON object from the buffer
                 buffer = buffer.substring(jsonEnd + 1);
             }
             jsonEnd = buffer.indexOf('}', jsonEnd > -1 ? jsonEnd + 1 : 0);
@@ -125,7 +125,7 @@ export default function DashboardClient() {
   const handleGenerateReport = async (collectedData: { heartRate: number[], spo2: number[], ecg: number[], gsr: number[]}) => {
     if (isGenerating) return;
 
-    setIsGenerating(true); // Now in generating state
+    setIsGenerating(true); 
     setShowRedirectingOverlay(true);
     setError(null);
     
@@ -143,7 +143,7 @@ export default function DashboardClient() {
       router.push(result.redirectUrl);
     } else {
       setError(result.message);
-      setIsGenerating(false); // Stop generating state on error
+      setIsGenerating(false);
       setShowRedirectingOverlay(false);
     }
   };
@@ -162,6 +162,9 @@ export default function DashboardClient() {
     try {
         const textEncoder = new TextEncoder();
         await writerRef.current.write(textEncoder.encode("M")); // Send 'M' to start monitoring
+        
+        keepReading.current = true;
+        readFromSerialPort(); // Start reading AFTER sending the command
     } catch (err) {
         console.error("Error writing to serial port:", err);
         setError("Could not send command to device.");
@@ -182,12 +185,10 @@ export default function DashboardClient() {
         setError(null);
         console.log("Device connected successfully!");
 
-        keepReading.current = true;
+        // Do not start reading immediately. Wait for user to click "Start Monitoring"
         readerRef.current = port.readable.getReader();
         writerRef.current = port.writable.getWriter();
         
-        readFromSerialPort();
-
       } catch (err: any) {
         console.error("There was an error opening the serial port:", err);
         setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
