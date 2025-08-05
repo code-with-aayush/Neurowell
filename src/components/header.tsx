@@ -1,19 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function Header() {
-  const router = useRouter();
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/');
+      // Force a hard refresh to the home page to clear state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out: ', error);
     }
