@@ -36,11 +36,10 @@ export default function DashboardClient() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
-  // Ref to hold the serial port reader
   const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
-  const portRef = useRef<any | null>(null); // To keep track of the port
+  const writerRef = useRef<WritableStreamDefaultWriter<any> | null>(null);
+  const portRef = useRef<any | null>(null); 
   const keepReading = useRef(false);
-
 
   const readFromSerialPort = async () => {
     if (!readerRef.current) return;
@@ -52,51 +51,51 @@ export default function DashboardClient() {
       try {
         const { value, done } = await readerRef.current.read();
         if (done) {
-          console.log("Reader has been closed.");
           break;
         }
         
         partialData += textDecoder.decode(value, { stream: true });
         
-        let newlineIndex;
-        while ((newlineIndex = partialData.indexOf('\n')) !== -1) {
-          const line = partialData.substring(0, newlineIndex).trim();
-          partialData = partialData.substring(newlineIndex + 1);
-
-          if (line) {
-            try {
-              const sensorData = JSON.parse(line);
+        // Assuming the Arduino sends the full JSON in one go after monitoring
+        if (partialData.includes('\n')) {
+          const jsonString = partialData.substring(0, partialData.indexOf('\n')).trim();
+           try {
+              const sensorData = JSON.parse(jsonString);
               
-              if(isMonitoring) {
-                const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              const now = new Date();
+              const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
 
-                setData(prevData => {
-                  const maxPoints = 20;
+              const heartRateData = sensorData.heartRate.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+              const spo2Data = sensorData.spo2.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+              const ecgData = sensorData.ecg.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+              const gsrData = sensorData.gsr.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
+             
+              setData({
+                heartRate: heartRateData,
+                spo2: spo2Data,
+                ecg: ecgData,
+                gsr: gsrData
+              });
 
-                  const newHeartRatePoint = { time: newTime, value: sensorData.heartRate };
-                  const newSpo2Point = { time: newTime, value: sensorData.spo2 };
-                  const newEcgPoint = { time: newTime, value: sensorData.ecg };
-                  const newGsrPoint = { time: newTime, value: sensorData.gsr };
-                  
-                  return {
-                    heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
-                    spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
-                    ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
-                    gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
-                  };
-                });
-                
-                setLatestValues({
-                  heartRate: sensorData.heartRate,
-                  spo2: sensorData.spo2,
-                  ecg: sensorData.ecg,
-                  gsr: sensorData.gsr,
-                });
-              }
+              const last = (arr: any[]) => arr.length > 0 ? arr[arr.length - 1].value : 0;
+              setLatestValues({
+                heartRate: last(heartRateData),
+                spo2: last(spo2Data),
+                ecg: last(ecgData),
+                gsr: last(gsrData)
+              });
+
+              setIsMonitoring(false);
+              handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
+
+
             } catch (e) {
-              console.warn("Could not parse JSON from serial:", line, e);
+              console.warn("Could not parse JSON from serial:", jsonString, e);
+              setError("Received invalid data from device.");
+              setIsMonitoring(false);
             }
-          }
+            // Clear partial data after processing
+            partialData = '';
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -105,23 +104,26 @@ export default function DashboardClient() {
             setIsDeviceConnected(false);
             keepReading.current = false;
         }
+        setIsMonitoring(false);
         break;
       }
     }
   };
 
 
-  const handleGenerateReport = async () => {
+  const handleGenerateReport = async (collectedData: { heartRate: number[], spo2: number[], ecg: number[], gsr: number[]}) => {
     if (isGenerating) return;
 
     setIsGenerating(true);
     setError(null);
     
+    const createDataPoint = (value: number, index: number) => ({ time: `${index}s`, value });
+
     const formData = new FormData();
-    formData.append('heartRate', JSON.stringify(data.heartRate));
-    formData.append('spo2', JSON.stringify(data.spo2));
-    formData.append('ecg', JSON.stringify(data.ecg));
-    formData.append('gsr', JSON.stringify(data.gsr));
+    formData.append('heartRate', JSON.stringify(collectedData.heartRate.map(createDataPoint)));
+    formData.append('spo2', JSON.stringify(collectedData.spo2.map(createDataPoint)));
+    formData.append('ecg', JSON.stringify(collectedData.ecg.map(createDataPoint)));
+    formData.append('gsr', JSON.stringify(collectedData.gsr.map(createDataPoint)));
 
     const result = await createReport(null, formData);
 
@@ -133,17 +135,25 @@ export default function DashboardClient() {
     }
   };
 
-  const startMonitoring = () => {
+  const startMonitoring = async () => {
+    if (!writerRef.current) {
+        setError("Device is not ready to write.");
+        return;
+    }
     setData(initialDataState);
     setLatestValues(initialLatestValues);
     setError(null);
     setIsMonitoring(true);
+
+    try {
+        const textEncoder = new TextEncoder();
+        await writerRef.current.write(textEncoder.encode("M")); // Send 'M' to start monitoring
+    } catch (err) {
+        console.error("Error writing to serial port:", err);
+        setError("Could not send command to device.");
+        setIsMonitoring(false);
+    }
   };
-  
-  const stopMonitoring = () => {
-    setIsMonitoring(false);
-    handleGenerateReport();
-  }
 
 
   const handleConnectDevice = async () => {
@@ -160,6 +170,8 @@ export default function DashboardClient() {
 
         keepReading.current = true;
         readerRef.current = port.readable.getReader();
+        writerRef.current = port.writable.getWriter();
+        
         readFromSerialPort();
 
       } catch (err: any) {
@@ -174,22 +186,26 @@ export default function DashboardClient() {
 
   const handleDisconnectDevice = async () => {
     keepReading.current = false;
+    
+    if (writerRef.current) {
+        try {
+            writerRef.current.releaseLock();
+        } catch (error) { /* Ignore */ }
+        writerRef.current = null;
+    }
+
     if (readerRef.current) {
         try {
             await readerRef.current.cancel();
-        } catch (error) {
-            // Ignore cancel error
-        } finally {
             readerRef.current.releaseLock();
-            readerRef.current = null;
-        }
+        } catch (error) { /* Ignore */ }
+        readerRef.current = null;
     }
+
     if (portRef.current) {
         try {
             await portRef.current.close();
-        } catch (error) {
-            // Ignore close error
-        }
+        } catch (error) { /* Ignore */ }
         portRef.current = null;
     }
     setIsDeviceConnected(false);
@@ -244,24 +260,24 @@ export default function DashboardClient() {
                 Disconnect Device
               </Button>
             )}
-             <Button onClick={isMonitoring ? stopMonitoring : startMonitoring} disabled={!isDeviceConnected || isGenerating}>
-              {isMonitoring ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Stop Monitoring
-                </>
-              ) : isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Report...
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Monitoring
-                </>
-              )}
-            </Button>
+             <Button onClick={startMonitoring} disabled={!isDeviceConnected || isMonitoring || isGenerating}>
+                {isMonitoring ? (
+                    <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Monitoring...
+                    </>
+                ) : isGenerating ? (
+                    <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                    </>
+                ) : (
+                    <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Monitoring
+                    </>
+                )}
+             </Button>
           </div>
         </header>
 
