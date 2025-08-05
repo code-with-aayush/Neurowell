@@ -20,10 +20,10 @@ const initialDataState = {
   gsr: [] as DataPoint[],
 };
 
-function SubmitButton() {
+function SubmitButton({disabled} : {disabled: boolean}) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" disabled={pending}>
+    <Button type="submit" variant="outline" disabled={pending || disabled}>
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -43,6 +43,7 @@ export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
+  const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [state, formAction] = useFormState(createReport, null);
   const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,12 +52,13 @@ export default function DashboardClient() {
     if (isCollecting) {
       interval = setInterval(() => {
         setData(prevData => {
-          const newEcgPoint = { time: new Date().toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 };
-          const newGsrPoint = { time: new Date().toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 };
-          const newHeartRatePoint = { time: new Date().toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) };
-          const newSpo2Point = { time: new Date().toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) };
+          const newTime = new Date().toLocaleTimeString();
+          const newEcgPoint = { time: newTime, value: 1.5 + (Math.random() - 0.5) * 0.4 };
+          const newGsrPoint = { time: newTime, value: 2 + (Math.random() - 0.5) * 1.5 };
+          const newHeartRatePoint = { time: newTime, value: 70 + Math.floor(Math.random() * 25) };
+          const newSpo2Point = { time: newTime, value: 95 + Math.floor(Math.random() * 5) };
           
-          const maxPoints = 20; // Keep 2 seconds of data (10 points per second assumption)
+          const maxPoints = 20;
 
           return {
             heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
@@ -72,10 +74,11 @@ export default function DashboardClient() {
 
 
   const startMonitoring = () => {
-    setData(initialDataState); // Reset data
+    setData(initialDataState);
+    setIsCollectionComplete(false);
     setIsMonitoring(true);
     setIsCollecting(true);
-
+    
     if (monitoringTimeoutRef.current) {
       clearTimeout(monitoringTimeoutRef.current);
     }
@@ -83,6 +86,7 @@ export default function DashboardClient() {
     monitoringTimeoutRef.current = setTimeout(() => {
       setIsMonitoring(false);
       setIsCollecting(false);
+      setIsCollectionComplete(true);
     }, 2000);
   };
   
@@ -145,7 +149,7 @@ export default function DashboardClient() {
               <input type="hidden" name="spo2" value={JSON.stringify(data.spo2)} />
               <input type="hidden" name="ecg" value={JSON.stringify(data.ecg)} />
               <input type="hidden" name="gsr" value={JSON.stringify(data.gsr)} />
-              <SubmitButton />
+              <SubmitButton disabled={!isCollectionComplete || isCollecting} />
             </form>
           </div>
         </header>
