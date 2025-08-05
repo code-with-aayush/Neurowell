@@ -9,6 +9,7 @@ import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCirc
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createReport } from './actions';
+import { useRouter } from 'next/navigation';
 
 
 type DataPoint = { time: string; value: number };
@@ -46,6 +47,7 @@ export default function DashboardClient() {
   const [isCollectionComplete, setIsCollectionComplete] = useState(false);
   const [state, formAction] = useFormState(createReport, null);
   const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -71,6 +73,12 @@ export default function DashboardClient() {
     }
     return () => clearInterval(interval);
   }, [isCollecting]);
+  
+   useEffect(() => {
+    if (state?.success && state.redirectUrl) {
+      router.push(state.redirectUrl);
+    }
+  }, [state, router]);
 
 
   const startMonitoring = () => {
@@ -154,7 +162,7 @@ export default function DashboardClient() {
           </div>
         </header>
 
-         {state?.message && (
+         {state && !state.success && state.message && (
           <Card className="bg-red-50 border-red-200 mb-8">
             <CardContent className="p-4 flex items-center gap-3">
               <AlertCircle className="text-red-600" />
@@ -193,7 +201,7 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <ChartCard title="ECG Waveform" isPaused={!isMonitoring}>
+           <ChartCard title="ECG Waveform" isPaused={!isCollecting}>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -210,7 +218,7 @@ export default function DashboardClient() {
                </AreaChart>
              </ChartContainer>
           </ChartCard>
-          <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring}>
+          <ChartCard title="GSR (Stress Level)" isPaused={!isCollecting}>
               <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false}/>

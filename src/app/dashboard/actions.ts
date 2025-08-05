@@ -12,12 +12,19 @@ function average(arr: number[]): number {
 export async function createReport(
   currentState: any,
   formData: FormData
-) {
+): Promise<{ success: boolean; message: string; redirectUrl?: string }> {
   try {
     const heartRateData = JSON.parse(formData.get('heartRate') as string);
     const spo2Data = JSON.parse(formData.get('spo2') as string);
     const ecgData = JSON.parse(formData.get('ecg') as string);
     const gsrData = JSON.parse(formData.get('gsr') as string);
+    
+    if (heartRateData.length === 0) {
+      return {
+        success: false,
+        message: 'Monitoring data is empty. Please start monitoring before generating a report.',
+      };
+    }
     
     const heartRate = average(heartRateData.map((d: any) => d.value));
     const spo2 = average(spo2Data.map((d: any) => d.value));
@@ -37,12 +44,26 @@ export async function createReport(
     const summary = encodeURIComponent(report.summary);
     const suggestions = encodeURIComponent(JSON.stringify(report.recommendations));
     
-    redirect(`/report?summary=${summary}&suggestions=${suggestions}&avgHr=${heartRate.toFixed(0)}&avgStress=${gsr.toFixed(1)}`);
-
-  } catch (error) {
-    console.error("Report Generation Error:", error);
+    const redirectUrl = `/report?summary=${summary}&suggestions=${suggestions}&avgHr=${heartRate.toFixed(0)}&avgStress=${gsr.toFixed(1)}`;
+    
     return {
-      message: 'Failed to generate report. The AI model may be overloaded. Please try again in a few moments.',
+        success: true,
+        message: 'Report generated successfully.',
+        redirectUrl: redirectUrl
+    };
+
+  } catch (error: any) {
+    console.error("Report Generation Error:", error);
+    let errorMessage = 'Failed to generate report. Please try again in a few moments.';
+    if (error.message && error.message.includes('overloaded')) {
+        errorMessage = 'The AI model is currently overloaded. Please try again later.';
+    } else if (error.message) {
+        errorMessage = `An unexpected error occurred: ${error.message}`;
+    }
+    
+    return {
+      success: false,
+      message: errorMessage,
     };
   }
 }
