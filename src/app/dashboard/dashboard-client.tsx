@@ -50,7 +50,9 @@ export default function DashboardClient() {
         });
       }, 100);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if(interval) clearInterval(interval);
+    }
   }, [isMonitoring]);
   
   const handleGenerateReport = async (monitoringData: typeof initialDataState) => {
@@ -84,10 +86,11 @@ export default function DashboardClient() {
 
     monitoringTimeoutRef.current = setTimeout(() => {
       setIsMonitoring(false);
+      // We need to use a functional update for setData to get the latest state
+      // inside the timeout callback.
       setData(currentData => {
-        // Pass the most up-to-date data to the report generation function
         handleGenerateReport(currentData);
-        return currentData;
+        return currentData; 
       });
     }, 2000);
   };
@@ -287,3 +290,5 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
+
+    
