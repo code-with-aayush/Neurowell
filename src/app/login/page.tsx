@@ -2,13 +2,13 @@
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase'; // Adjust the import path as necessary
-import { redirect } from 'next/navigation';
 import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -16,7 +16,7 @@ async function login(prevState: any, formData: FormData) {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    redirect('/'); // Redirect to home page on successful login
+    return { success: true };
   } catch (error: any) {
     return { message: error.message };
   }
@@ -36,6 +36,12 @@ function SubmitButton() {
 export default function LoginPage() {
   const [state, formAction] = useFormState(login, null);
 
+  useEffect(() => {
+    if (state?.success) {
+      window.location.href = '/dashboard';
+    }
+  }, [state]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
@@ -46,15 +52,15 @@ export default function LoginPage() {
           <form action={formAction} className="space-y-6">
             <div>
               <Label htmlFor="email">Email address</Label>
-              <Input id="email" name="email" type="email" required className="mt-1" />
+              <Input id="email" name="email" type="email" autoComplete="email" required className="mt-1" />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required className="mt-1" />
+              <Input id="password" name="password" type="password" autoComplete="current-password" required className="mt-1" />
             </div>
             <SubmitButton />
             {state?.message && <p className="text-red-500 text-sm">{state.message}</p>}
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

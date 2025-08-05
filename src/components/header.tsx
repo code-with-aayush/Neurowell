@@ -4,14 +4,23 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit } from 'lucide-react';
 import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // Force a hard refresh to the home page to clear state
-      window.location.href = '/';
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error signing out: ', error);
     }
@@ -30,12 +39,25 @@ export default function Header() {
           <Button asChild variant="ghost">
             <Link href="/">Home</Link>
           </Button>
-          <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
-            <Link href="/dashboard">Dashboard</Link>
-          </Button>
-          <Button variant="ghost" onClick={handleLogout}>
-            Logout
-          </Button>
+          {user ? (
+            <>
+              <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+              <Button variant="ghost" onClick={handleLogout}>
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
+                <Link href="/signup">Sign Up</Link>
+              </Button>
+            </>
+          )}
         </nav>
       </div>
     </header>
