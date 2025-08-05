@@ -34,54 +34,95 @@ export default function DashboardClient() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (isMonitoring) {
-      interval = setInterval(() => {
-        const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const newEcgPoint = { time: newTime, value: 1.5 + (Math.random() - 0.5) * 0.4 };
-        const newGsrPoint = { time: newTime, value: 2 + (Math.random() - 0.5) * 1.5 };
-        const newHeartRatePoint = { time: newTime, value: 70 + Math.floor(Math.random() * 25) };
-        const newSpo2Point = { time: newTime, value: 95 + Math.floor(Math.random() * 5) };
-        
-        setData(prevData => {
-          const maxPoints = 20;
-
-          const newData = {
-            heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
-            spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
-            ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
-            gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
-          };
-
-          setLatestValues({
-            heartRate: newHeartRatePoint.value,
-            spo2: newSpo2Point.value,
-            ecg: newEcgPoint.value,
-            gsr: newGsrPoint.value,
-          });
-
-          return newData;
-        });
-      }, 100);
-    }
-    return () => {
-      if(interval) clearInterval(interval);
-    }
-  }, [isMonitoring]);
   
-  const handleGenerateReport = async (monitoringData: typeof initialDataState) => {
+  // Ref to hold the serial port reader
+  const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
+  const portRef = useRef<any | null>(null); // To keep track of the port
+
+
+  const readFromSerialPort = async () => {
+    if (!readerRef.current) return;
+    
+    const textDecoder = new TextDecoder();
+    let partialData = '';
+
+    while (isDeviceConnected) {
+      try {
+        const { value, done } = await readerRef.current.read();
+        if (done) {
+          console.log("Reader has been closed.");
+          break;
+        }
+        
+        partialData += textDecoder.decode(value, { stream: true });
+        
+        // Process complete lines (JSON objects)
+        let newlineIndex;
+        while ((newlineIndex = partialData.indexOf('\n')) !== -1) {
+          const line = partialData.substring(0, newlineIndex).trim();
+          partialData = partialData.substring(newlineIndex + 1);
+
+          if (line) {
+            try {
+              const sensorData = JSON.parse(line);
+              const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              
+              if(isMonitoring) {
+                setData(prevData => {
+                  const maxPoints = 20;
+
+                  const newEcgPoint = { time: newTime, value: sensorData.ecg };
+                  const newGsrPoint = { time: newTime, value: sensorData.gsr };
+                  const newHeartRatePoint = { time: newTime, value: sensorData.heartRate };
+                  const newSpo2Point = { time: newTime, value: sensorData.spo2 };
+
+                  const newData = {
+                    heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
+                    spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
+                    ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
+                    gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
+                  };
+                  
+                  setLatestValues({
+                    heartRate: sensorData.heartRate,
+                    spo2: sensorData.spo2,
+                    ecg: sensorData.ecg,
+                    gsr: sensorData.gsr,
+                  });
+
+                  return newData;
+                });
+              }
+            } catch (e) {
+              console.warn("Could not parse JSON from serial:", line);
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error("Error reading from serial port:", err);
+        setError("Error reading from device. It may have been disconnected.");
+        setIsDeviceConnected(false);
+        break;
+      }
+    }
+  };
+
+
+  const handleGenerateReport = async () => {
+    if (isGenerating) return;
+
     setIsGenerating(true);
     setError(null);
+    
+    // Stop monitoring before generating the report
+    setIsMonitoring(false);
 
     const formData = new FormData();
-    formData.append('heartRate', JSON.stringify(monitoringData.heartRate));
-    formData.append('spo2', JSON.stringify(monitoringData.spo2));
-    formData.append('ecg', JSON.stringify(monitoringData.ecg));
-    formData.append('gsr', JSON.stringify(monitoringData.gsr));
+    formData.append('heartRate', JSON.stringify(data.heartRate));
+    formData.append('spo2', JSON.stringify(data.spo2));
+    formData.append('ecg', JSON.stringify(data.ecg));
+    formData.append('gsr', JSON.stringify(data.gsr));
 
     const result = await createReport(null, formData);
 
@@ -89,8 +130,8 @@ export default function DashboardClient() {
       router.push(result.redirectUrl);
     } else {
       setError(result.message);
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   const startMonitoring = () => {
@@ -98,32 +139,30 @@ export default function DashboardClient() {
     setLatestValues(initialLatestValues);
     setError(null);
     setIsMonitoring(true);
-    
-    if (monitoringTimeoutRef.current) {
-      clearTimeout(monitoringTimeoutRef.current);
-    }
-
-    monitoringTimeoutRef.current = setTimeout(() => {
-      setIsMonitoring(false);
-      setData(currentData => {
-        handleGenerateReport(currentData);
-        return currentData; 
-      });
-    }, 2000);
   };
+  
+  const stopMonitoring = () => {
+    setIsMonitoring(false);
+    handleGenerateReport();
+  }
+
 
   const handleConnectDevice = async () => {
     if ('serial' in navigator) {
       try {
         // @ts-ignore
         const port = await navigator.serial.requestPort();
-        // In a real application, you would continue to open the port and read data.
-        // For this demo, we'll just confirm that a port was selected.
         await port.open({ baudRate: 9600 });
-        console.log("Device connected successfully!");
+        portRef.current = port;
+        
+        readerRef.current = port.readable.getReader();
         setIsDeviceConnected(true);
-        // Note: You would typically start reading data from the port here.
-        // const reader = port.readable.getReader();
+        setError(null);
+        console.log("Device connected successfully!");
+
+        // Start reading from the port
+        readFromSerialPort();
+
       } catch (err) {
         console.error("There was an error opening the serial port:", err);
         setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
@@ -132,6 +171,21 @@ export default function DashboardClient() {
       console.error("The Web Serial API is not supported in this browser.");
       setError("This browser does not support the Web Serial API. Please try Chrome or Edge.");
     }
+  };
+
+  const handleDisconnectDevice = async () => {
+    if (readerRef.current) {
+        await readerRef.current.cancel();
+        readerRef.current.releaseLock();
+        readerRef.current = null;
+    }
+    if (portRef.current) {
+        await portRef.current.close();
+        portRef.current = null;
+    }
+    setIsDeviceConnected(false);
+    setIsMonitoring(false);
+    console.log("Device disconnected.");
   };
   
   const chartConfig = {
@@ -170,17 +224,22 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-            {!isDeviceConnected && (
+            {!isDeviceConnected ? (
               <Button onClick={handleConnectDevice}>
                 <Plug className="mr-2 h-4 w-4" />
                 Connect Device
               </Button>
+            ) : (
+              <Button onClick={handleDisconnectDevice} variant="outline">
+                <Plug className="mr-2 h-4 w-4" />
+                Disconnect Device
+              </Button>
             )}
-             <Button variant="outline" onClick={startMonitoring} disabled={!isDeviceConnected || isMonitoring || isGenerating}>
+             <Button onClick={isMonitoring ? stopMonitoring : startMonitoring} disabled={!isDeviceConnected || isGenerating}>
               {isMonitoring ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Monitoring...
+                  Stop Monitoring
                 </>
               ) : isGenerating ? (
                 <>
@@ -239,7 +298,7 @@ export default function DashboardClient() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" status="ok" />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(0)}%`} unit="" status="ok" />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}%`} unit="" status="ok" />
           <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" status="ok" />
           <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" status="ok" />
         </div>
