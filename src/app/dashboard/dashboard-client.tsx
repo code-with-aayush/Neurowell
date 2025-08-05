@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Heart, Droplets, Activity, Zap, Play, Loader2, AlertCircle } from 'lucide-react';
+import { Heart, Droplets, Activity, Zap, Play, Loader2, AlertCircle, Plug } from 'lucide-react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,7 @@ export default function DashboardClient() {
   const [latestValues, setLatestValues] = useState(initialLatestValues);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -40,13 +41,13 @@ export default function DashboardClient() {
     let interval: NodeJS.Timeout | undefined;
     if (isMonitoring) {
       interval = setInterval(() => {
+        const newTime = new Date().toLocaleTimeString();
+        const newEcgPoint = { time: newTime, value: 1.5 + (Math.random() - 0.5) * 0.4 };
+        const newGsrPoint = { time: newTime, value: 2 + (Math.random() - 0.5) * 1.5 };
+        const newHeartRatePoint = { time: newTime, value: 70 + Math.floor(Math.random() * 25) };
+        const newSpo2Point = { time: newTime, value: 95 + Math.floor(Math.random() * 5) };
+        
         setData(prevData => {
-          const newTime = new Date().toLocaleTimeString();
-          const newEcgPoint = { time: newTime, value: 1.5 + (Math.random() - 0.5) * 0.4 };
-          const newGsrPoint = { time: newTime, value: 2 + (Math.random() - 0.5) * 1.5 };
-          const newHeartRatePoint = { time: newTime, value: 70 + Math.floor(Math.random() * 25) };
-          const newSpo2Point = { time: newTime, value: 95 + Math.floor(Math.random() * 5) };
-          
           const maxPoints = 20;
 
           const newData = {
@@ -110,6 +111,12 @@ export default function DashboardClient() {
       });
     }, 2000);
   };
+
+  const handleConnectDevice = () => {
+    // In a real application, this would involve using the Web Serial API 
+    // to connect to a physical device. Here, we'll just simulate it.
+    setIsDeviceConnected(true);
+  };
   
   const chartConfig = {
     value: {
@@ -147,7 +154,13 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-             <Button variant="outline" onClick={startMonitoring} disabled={isMonitoring || isGenerating}>
+            {!isDeviceConnected && (
+              <Button onClick={handleConnectDevice}>
+                <Plug className="mr-2 h-4 w-4" />
+                Connect Device
+              </Button>
+            )}
+             <Button variant="outline" onClick={startMonitoring} disabled={!isDeviceConnected || isMonitoring || isGenerating}>
               {isMonitoring ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -184,13 +197,22 @@ export default function DashboardClient() {
           <CardContent className="p-4 flex justify-between items-center">
             <div>
               <CardTitle className="text-lg font-semibold text-purple-800">Current Status</CardTitle>
-              <CardDescription className="text-purple-600">Device disconnected</CardDescription>
+              <CardDescription className="text-purple-600">
+                {isDeviceConnected ? 'Device connected and ready to monitor.' : 'Please connect your device to start monitoring.'}
+              </CardDescription>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-sm font-medium">
-                <AlertCircle size={16} />
-                <span>Disconnected</span>
-              </div>
+               {isDeviceConnected ? (
+                <div className="flex items-center gap-2 text-green-600 bg-green-100 px-3 py-1 rounded-full text-sm font-medium">
+                  <Plug size={16} />
+                  <span>Connected</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-sm font-medium">
+                  <AlertCircle size={16} />
+                  <span>Disconnected</span>
+                </div>
+              )}
                <div className="flex items-center gap-2 text-gray-600 bg-gray-200 px-3 py-1 rounded-full text-sm font-medium">
                 <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-500'}`} />
                 <span>{isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}</span>
@@ -301,3 +323,5 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
+
+    
