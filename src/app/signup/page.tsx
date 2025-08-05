@@ -1,11 +1,12 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useFormState, useFormStatus } from 'react-dom';
-import { useEffect } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { signUpAction } from './actions';
 import Link from 'next/link';
@@ -23,7 +24,7 @@ function SubmitButton() {
 }
 
 export default function SignUpPage() {
-  const [state, formAction] = useFormState(signUpAction, { success: false, error: null });
+  const [state, formAction] = useActionState(signUpAction, { success: false, error: null });
   const router = useRouter();
 
   useEffect(() => {
