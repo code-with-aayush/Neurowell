@@ -1,33 +1,37 @@
+
+'use client';
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-
-export const metadata: Metadata = {
- title: 'Neurowell',
-  description: 'Monitor your mental wellness with real-time biometric data and AI-powered insights.',
-};
+import { usePathname } from 'next/navigation';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const showHeaderAndFooter = !['/login', '/signup'].includes(pathname);
+
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+        <title>Neurowell</title>
+        <meta name="description" content="Monitor your mental wellness with real-time biometric data and AI-powered insights." />
       </head>
       <body className="font-body antialiased h-full bg-background">
         <div className="flex flex-col min-h-screen">
-          <Header />
+          {showHeaderAndFooter && <Header />}
           <main className="flex-grow">
             {children}
           </main>
-          <Footer />
+          {showHeaderAndFooter && <Footer />}
         </div>
         <Toaster />
       </body>
