@@ -4,7 +4,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Download, TrendingUp, Heart, Zap, Smile, Shield, Activity, Bell, Droplets, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, TrendingUp, Heart, Zap, Activity, AlertTriangle, Droplets, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -40,9 +40,6 @@ function ReportContent() {
   const avgHr = searchParams.get('avgHr') || 'N/A';
   const avgStress = searchParams.get('avgStress') || 'N/A';
 
-  const overallScore = summary.match(/\d+\/\d+/)?.[0];
-
-
   return (
     <div className="bg-[#F8F9FA] p-4 sm:p-6 md:p-8">
       <header className="mb-8">
@@ -62,11 +59,10 @@ function ReportContent() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatCard title="Average Heart Rate" value={`${avgHr} BPM`} icon={Heart} />
         <StatCard title="Average Stress Level" value={`${avgStress} μS`} icon={Zap} />
         <StatCard title="Session" value="5s Capture" icon={Activity} />
-         {overallScore && <StatCard title="Overall Score" value={overallScore} icon={Shield} />}
       </div>
 
        <Card className="mb-8">
@@ -87,12 +83,8 @@ function ReportContent() {
        </Card>
 
       <div className="bg-primary/10 text-center p-8 rounded-lg">
-        {overallScore ? (
-            <h2 className="text-2xl font-bold text-primary">Overall Health Score: {overallScore}</h2>
-        ) : (
-            <h2 className="text-2xl font-bold text-primary">Report Summary</h2>
-        )}
-        <p className="text-primary/80 max-w-2xl mx-auto mt-2">{summary.replace(/Overall Health Score: \d+\/\d+\./, '')}</p>
+        <h2 className="text-2xl font-bold text-primary">Report Summary</h2>
+        <p className="text-primary/80 max-w-2xl mx-auto mt-2">{summary}</p>
         <Button asChild className="mt-6">
             <Link href="/dashboard">Monitor Again</Link>
         </Button>
@@ -141,5 +133,4 @@ export default function ReportPage() {
     </Suspense>
   );
 }
-
     

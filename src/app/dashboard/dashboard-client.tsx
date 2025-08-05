@@ -9,6 +9,7 @@ import { Heart, Droplets, Activity, Zap, Play, Loader2, AlertCircle, Plug } from
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 type DataPoint = { time: string; value: number };
@@ -34,6 +35,7 @@ export default function DashboardClient() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRedirectingOverlay, setShowRedirectingOverlay] = useState(false);
   const router = useRouter();
   
   const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
@@ -124,6 +126,7 @@ export default function DashboardClient() {
     if (isGenerating) return;
 
     setIsGenerating(true); // Now in generating state
+    setShowRedirectingOverlay(true);
     setError(null);
     
     const createDataPoint = (value: number, index: number) => ({ time: `${index}s`, value });
@@ -141,6 +144,7 @@ export default function DashboardClient() {
     } else {
       setError(result.message);
       setIsGenerating(false); // Stop generating state on error
+      setShowRedirectingOverlay(false);
     }
   };
 
@@ -228,30 +232,16 @@ export default function DashboardClient() {
       label: "Value",
     },
   };
-
-  const insights = {
-    heartRate: {
-      title: 'Heart Rate',
-      text: 'Your heart rate has been stable throughout the day. Great cardiovascular health!',
-      color: 'bg-green-100',
-      dotColor: 'bg-green-500'
-    },
-    stressLevel: {
-      title: 'Stress Level',
-      text: 'Slight elevation in stress detected. Consider taking a short break.',
-      color: 'bg-yellow-100',
-      dotColor: 'bg-yellow-500'
-    },
-    overall: {
-      title: 'Overall',
-      text: 'Your mental health indicators show positive trends. Keep it up!',
-      color: 'bg-blue-100',
-      dotColor: 'bg-blue-500'
-    }
-  }
   
   return (
-    <div className="bg-[#F8F9FA] min-h-screen p-8">
+    <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
+       {showRedirectingOverlay && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <h2 className="mt-4 text-xl font-semibold text-gray-700">Generating Your Report...</h2>
+          <p className="text-gray-500">Please wait while we analyze your data.</p>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
@@ -332,10 +322,10 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" status="ok" />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}%`} unit="" status="ok" />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" status="ok" />
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" status="ok" />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring} />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring} />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring} />
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -375,20 +365,12 @@ export default function DashboardClient() {
            </ChartCard>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Today's Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <InsightCard {...insights.heartRate} />
-            <InsightCard {...insights.stressLevel} />
-            <InsightCard {...insights.overall} />
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-const VitalSignCard = ({ icon: Icon, title, value, unit, status }: { icon: any, title: string, value: string | number, unit: string, status: string }) => (
+const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => (
   <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
     <CardContent className="p-4">
       <div className="flex justify-between items-start mb-2">
@@ -398,11 +380,14 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, status }: { icon: any, 
           </div>
           <p className="text-gray-500">{title}</p>
         </div>
-        <div className="w-3 h-3 rounded-full bg-green-500" />
       </div>
-      <div className="text-3xl font-bold text-gray-800">
-        {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
-      </div>
+       {isLoading ? (
+        <Skeleton className="h-8 w-3/4 mt-1" />
+      ) : (
+        <div className="text-3xl font-bold text-gray-800">
+          {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
+        </div>
+      )}
     </CardContent>
   </Card>
 );
@@ -418,18 +403,6 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardHeader>
     <CardContent>
       {children}
-    </CardContent>
-  </Card>
-)
-
-const InsightCard = ({ title, text, color, dotColor }: { title: string, text: string, color: string, dotColor: string }) => (
-  <Card className={`${color} border-0 shadow-sm`}>
-    <CardContent className="p-5">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
-        <h3 className="font-semibold text-gray-700">{title}</h3>
-      </div>
-      <p className="text-gray-600 text-sm">{text}</p>
     </CardContent>
   </Card>
 )
