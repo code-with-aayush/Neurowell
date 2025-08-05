@@ -320,7 +320,7 @@ export default function DashboardClient() {
                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                 <YAxis domain={[0, 3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                 <YAxis domain={[0, 3.3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                  <defs>
                     <linearGradient id="colorEcg" x1="0" y1="0" x2="0" y2="1">
@@ -337,7 +337,7 @@ export default function DashboardClient() {
                 <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                   <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                   <defs>
                     <linearGradient id="colorGsr" x1="0" y1="0" x2="0" y2="1">
@@ -409,5 +409,3 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
-
-    

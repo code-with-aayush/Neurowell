@@ -1,38 +1,81 @@
+// This is the Arduino sketch. You should upload this to your Arduino UNO.
 
-// A simple sketch to simulate reading sensor data and sending it over serial.
-// Upload this to your Arduino UNO.
+#include <LiquidCrystal.h>
+
+// Initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Sensor Pins (for when you integrate them)
+#define GSR_PIN A1
+#define ECG_PIN A0
 
 void setup() {
-  // Start serial communication at 9600 bits per second:
   Serial.begin(9600);
+  
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+  
+  // Use an unused analog pin to seed the random number generator
+  randomSeed(analogRead(A2)); 
+
+  lcd.print("Device Ready");
+  lcd.setCursor(0, 1);
+  lcd.print("Starting...");
+  delay(2000);
 }
 
 void loop() {
-  // Simulate reading sensor values
-  float spo2 = 95.0 + (random(0, 100) / 100.0) * 5.0; // Simulate SpO2 between 95-100%
-  float gsr = 1.5 + (random(0, 100) / 100.0) * 2.0;   // Simulate GSR
-  int heartRate = 65 + random(0, 20);                  // Simulate Heart Rate between 65-85 BPM
-  float ecg = 1.2 + (random(0, 100) / 100.0) * 0.6;    // Simulate ECG
+  // --- Simulate Sensor Readings ---
+  // Once the connection is stable, you can replace these with your actual sensor reading functions.
+  float heartRate = random(70, 95);          // Normal resting heart rate
+  float spo2 = random(950, 999) / 10.0;      // SpO2 percentage
+  float ecg = random(0, 1023) / 1023.0 * 3.3; // ECG value (normalized to voltage for example)
+  float gsr = random(200, 800) / 100.0;      // GSR in microSiemens
 
-  // Construct a JSON string with the sensor data
-  String json = "{";
-  json += "\"spo2\":";
-  json += spo2;
-  json += ",";
-  json += "\"gsr\":";
-  json += gsr;
-  json += ",";
-  json += "\"heartRate\":";
-  json += heartRate;
-  json += ",";
-  json += "\"ecg\":";
-  json += ecg;
-  json += "}";
+  // --- Display on LCD ---
+  // The display will cycle through the values every few seconds
+  static int displayState = 0;
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
 
-  // Send the JSON string over the serial port.
-  // The newline character is important for the web app to know when a message ends.
-  Serial.println(json);
+  switch(displayState) {
+    case 0:
+      lcd.print("HR: ");
+      lcd.print((int)heartRate);
+      lcd.print(" BPM");
+      break;
+    case 1:
+      lcd.print("SpO2: ");
+      lcd.print(spo2, 1);
+      lcd.print("%");
+      break;
+    case 2:
+      lcd.print("GSR: ");
+      lcd.print(gsr, 1);
+      lcd.print(" uS");
+      break;
+  }
 
-  // Wait for a second before sending the next reading
+  displayState = (displayState + 1) % 3; // Cycle through 0, 1, 2
+
+
+  // --- Send data as a JSON string to Serial ---
+  // This is the format the website expects
+  Serial.print("{");
+  Serial.print("\"heartRate\":");
+  Serial.print(heartRate);
+  Serial.print(",");
+  Serial.print("\"spo2\":");
+  Serial.print(spo2);
+  Serial.print(",");
+  Serial.print("\"ecg\":");
+  Serial.print(ecg);
+  Serial.print(",");
+  Serial.print("\"gsr\":");
+  Serial.print(gsr);
+  Serial.println("}"); // Use println to add a newline, which signifies the end of the message
+
+  // Wait for 1 second before sending the next set of data
   delay(1000);
 }
