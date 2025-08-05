@@ -1,15 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { createReport } from './actions';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useToast } from '@/hooks/use-toast';
 import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
+import Link from 'next/link';
 
 
 type DataPoint = { time: string; value: number };
@@ -23,33 +21,9 @@ const initialDataState = {
   gsr: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 })),
 };
 
-
-function GenerateReportButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="outline" disabled={pending}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
- {pending ? 'Generating...' : 'Generate Report'}
-    </Button>
-  );
-}
-
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
-  const { toast } = useToast();
   const [isMonitoring, setIsMonitoring] = useState(true);
-
-  const [state, formAction] = useActionState(createReport, null);
-
-  useEffect(() => {
-    if (state?.message) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: state.message,
-      });
-    }
-  }, [state, toast]);
 
   useEffect(() => {
     if (!isMonitoring) return;
@@ -119,13 +93,12 @@ export default function DashboardClient() {
               <Play className="mr-2 h-4 w-4" />
               {isMonitoring ? 'Pause Monitoring' : 'Start Monitoring'}
             </Button>
-            <form action={formAction}>
-              <input type="hidden" name="heartRateData" value={JSON.stringify(data.heartRate.map(d => d.value))} />
-              <input type="hidden" name="spo2Data" value={JSON.stringify(data.spo2.map(d => d.value))} />
-              <input type="hidden" name="ecgData" value={JSON.stringify(data.ecg.map(d => d.value))} />
-              <input type="hidden" name="gsrData" value={JSON.stringify(data.gsr.map(d => d.value))} />
-              <GenerateReportButton />
- </form>
+            <Button asChild variant="outline">
+              <Link href="/report">
+                <FileDown className="mr-2 h-4 w-4" />
+                View Report
+              </Link>
+            </Button>
           </div>
         </header>
 
@@ -263,5 +236,7 @@ const InsightCard = ({ title, text, color, dotColor }) => (
     </CardContent>
   </Card>
 )
+
+    
 
     

@@ -45,26 +45,38 @@ const PriorityBadge = ({ priority }: {priority: 'HIGH' | 'MEDIUM' | 'LOW' }) => 
     return <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${priorityStyles[priority]}`}>{priority}</span>
 }
 
-function ReportContent({ summary, suggestions, avgHr, avgStress }: { summary?: string; suggestions?: string, avgHr?: string, avgStress?: string }) {
-  if (!summary || !suggestions) {
-    return (
-      <Card className="text-center p-8">
-        <CardHeader>
-          <CardTitle className="text-2xl">Report Not Found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>The requested report could not be generated. Please return to the dashboard and try again.</p>
-           <Button asChild className="mt-4">
-            <Link href="/dashboard">Back to Dashboard</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
+function ReportContent() {
+    const staticReport = {
+    summary: 'Based on your recent data, your overall health score is 88/100. Your cardiovascular metrics are strong, and stress levels are mostly within a healthy range. Maintaining consistent sleep and hydration will further improve your well-being.',
+    recommendations: [
+      {
+        title: 'Maintain Consistent Sleep Schedule',
+        description: 'Aim for 7-8 hours of sleep per night, even on weekends, to improve recovery and cognitive function.',
+        priority: 'HIGH',
+      },
+      {
+        title: 'Mindful Stress Management',
+        description: 'Incorporate short mindfulness exercises or breathing techniques during your workday to manage occasional stress spikes.',
+        priority: 'MEDIUM',
+      },
+      {
+        title: 'Increase Daily Hydration',
+        description: 'Carry a water bottle and aim to drink at least 2 liters of water throughout the day for optimal physical and mental performance.',
+        priority: 'LOW',
+      },
+      {
+        title: 'Incorporate Light Physical Activity',
+        description: 'A 20-30 minute walk each day can significantly boost your mood and cardiovascular health.',
+        priority: 'MEDIUM',
+      },
+    ],
+    avgHr: '74',
+    avgStress: '2.0',
+  };
 
-  const decodedSummary = decodeURIComponent(summary);
-  const decodedSuggestions = JSON.parse(decodeURIComponent(suggestions));
-  const overallScore = decodedSummary.match(/\d+\/100/)?.[0] || '85/100';
+  const { summary, recommendations, avgHr, avgStress } = staticReport;
+  const overallScore = summary.match(/\d+\/\d+/)?.[0] || '88/100';
+
 
   return (
     <div className="bg-[#F8F9FA] p-4 sm:p-6 md:p-8">
@@ -86,8 +98,8 @@ function ReportContent({ summary, suggestions, avgHr, avgStress }: { summary?: s
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Average Heart Rate" value={`${avgHr || '73'} BPM`} change="+2%" icon={Heart} />
-        <StatCard title="Stress Level" value={`${avgStress || '2.4'} μS`} change="-15%" icon={Zap} trend="down" />
+        <StatCard title="Average Heart Rate" value={`${avgHr} BPM`} change="+2%" icon={Heart} />
+        <StatCard title="Stress Level" value={`${avgStress} μS`} change="-15%" icon={Zap} trend="down" />
         <StatCard title="Sleep Quality" value="7.5 hrs" change="+8%" icon={Smile} />
         <StatCard title="Recovery Score" value="85%" change="+12%" icon={Shield} />
       </div>
@@ -138,7 +150,7 @@ function ReportContent({ summary, suggestions, avgHr, avgStress }: { summary?: s
             </CardHeader>
            <CardContent>
                <div className="space-y-4">
-                   {decodedSuggestions.map((rec: any, index: number) => (
+                   {recommendations.map((rec: any, index: number) => (
                        <RecommendationItem key={index} title={rec.title} description={rec.description} priority={rec.priority} />
                    ))}
                </div>
@@ -147,7 +159,7 @@ function ReportContent({ summary, suggestions, avgHr, avgStress }: { summary?: s
 
       <div className="bg-primary/10 text-center p-8 rounded-lg">
         <h2 className="text-2xl font-bold text-primary">Overall Health Score: {overallScore}</h2>
-        <p className="text-primary/80 max-w-2xl mx-auto mt-2">{decodedSummary.replace(/Overall Health Score: \d+\/\d+\./, '')}</p>
+        <p className="text-primary/80 max-w-2xl mx-auto mt-2">{summary.replace(/Overall Health Score: \d+\/\d+\./, '')}</p>
         <Button asChild className="mt-6">
             <Link href="/dashboard">Continue Monitoring</Link>
         </Button>
@@ -187,14 +199,12 @@ const RecommendationItem = ({ title, description, priority }: { title: string, d
 )
 
 
-export default function ReportPage({
-  searchParams,
-}: {
-  searchParams: { summary?: string; suggestions?: string; avgHr?: string; avgStress?: string };
-}) {
+export default function ReportPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading report...</div>}>
-      <ReportContent summary={searchParams.summary} suggestions={searchParams.suggestions} avgHr={searchParams.avgHr} avgStress={searchParams.avgStress} />
+      <ReportContent />
     </Suspense>
   );
 }
+
+    
