@@ -26,7 +26,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (state?.success) {
-      window.location.href = '/dashboard';
+      window.location.href = '/login';
     }
   }, [state]);
 

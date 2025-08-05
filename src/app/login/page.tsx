@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (state?.success) {
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     }
   }, [state]);
 
