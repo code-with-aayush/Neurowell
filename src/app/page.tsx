@@ -1,10 +1,34 @@
+
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Heart, Activity, Shield, Cpu, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleDashboardRedirect = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!user) {
+      e.preventDefault();
+      router.push('/login');
+    }
+  };
+
   return (
     <div className="bg-background text-foreground">
       {/* Hero Section */}
@@ -24,7 +48,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
-                <Link href="/dashboard">Start Monitoring <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link href="/dashboard" onClick={handleDashboardRedirect}>Start Monitoring <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full px-8 py-6 text-base font-semibold">
                 <Link href="#">Learn More</Link>
@@ -141,7 +165,7 @@ export default function Home() {
             Start your journey to better mental well-being with our advanced monitoring technology.
           </p>
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
-            <Link href="/dashboard">Start Monitoring Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link href="/dashboard" onClick={handleDashboardRedirect}>Start Monitoring Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
