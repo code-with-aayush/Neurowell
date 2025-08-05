@@ -41,7 +41,7 @@ export default function DashboardClient() {
     let interval: NodeJS.Timeout | undefined;
     if (isMonitoring) {
       interval = setInterval(() => {
-        const newTime = new Date().toLocaleTimeString();
+        const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const newEcgPoint = { time: newTime, value: 1.5 + (Math.random() - 0.5) * 0.4 };
         const newGsrPoint = { time: newTime, value: 2 + (Math.random() - 0.5) * 1.5 };
         const newHeartRatePoint = { time: newTime, value: 70 + Math.floor(Math.random() * 25) };
@@ -112,10 +112,26 @@ export default function DashboardClient() {
     }, 2000);
   };
 
-  const handleConnectDevice = () => {
-    // In a real application, this would involve using the Web Serial API 
-    // to connect to a physical device. Here, we'll just simulate it.
-    setIsDeviceConnected(true);
+  const handleConnectDevice = async () => {
+    if ('serial' in navigator) {
+      try {
+        // @ts-ignore
+        const port = await navigator.serial.requestPort();
+        // In a real application, you would continue to open the port and read data.
+        // For this demo, we'll just confirm that a port was selected.
+        await port.open({ baudRate: 9600 });
+        console.log("Device connected successfully!");
+        setIsDeviceConnected(true);
+        // Note: You would typically start reading data from the port here.
+        // const reader = port.readable.getReader();
+      } catch (err) {
+        console.error("There was an error opening the serial port:", err);
+        setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
+      }
+    } else {
+      console.error("The Web Serial API is not supported in this browser.");
+      setError("This browser does not support the Web Serial API. Please try Chrome or Edge.");
+    }
   };
   
   const chartConfig = {
@@ -186,7 +202,7 @@ export default function DashboardClient() {
             <CardContent className="p-4 flex items-center gap-3">
               <AlertCircle className="text-red-600" />
               <div>
-                <CardTitle className="text-base font-semibold text-red-800">Report Generation Failed</CardTitle>
+                <CardTitle className="text-base font-semibold text-red-800">An Error Occurred</CardTitle>
                 <CardDescription className="text-red-600">{error}</CardDescription>
               </div>
             </CardContent>
@@ -323,5 +339,3 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
-
-    
