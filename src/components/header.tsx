@@ -40,7 +40,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
           <BrainCircuit className="h-7 w-7 text-primary" />
-          <span className="font-semibold">MindWave</span>
+          <span className="font-semibold">Neurowell</span>
         </Link>
         {!isAuthPage && (
           <nav className="hidden md:flex items-center gap-2">

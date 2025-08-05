@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground mb-4">
               <BrainCircuit className="h-7 w-7 text-primary" />
-              <span className="font-semibold">MindWave</span>
+              <span className="font-semibold">Neurowell</span>
             </Link>
             <p className="text-muted-foreground text-sm">Your mental health, monitored continuously.</p>
           </div>
@@ -38,7 +38,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} MindWave. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Neurowell.</p>
         </div>
       </div>
     </footer>
