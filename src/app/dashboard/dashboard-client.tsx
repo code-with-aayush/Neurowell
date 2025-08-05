@@ -92,8 +92,13 @@ export default function DashboardClient() {
                       ecg: last(ecgData),
                       gsr: last(gsrData)
                     });
+                    
+                    // Wait for 5 seconds before generating the report
+                    setTimeout(() => {
+                        handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
+                    }, 5000);
 
-                    handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
+
                     buffer = buffer.substring(jsonEnd + 1);
                     break; 
 
@@ -407,4 +412,6 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+    
+
     
