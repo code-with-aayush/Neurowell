@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useTransition, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { createReport } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +33,7 @@ export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
   const { toast } = useToast();
 
-  const [state, formAction] = useFormState(createReport, null);
+  const [state, formAction] = useActionState(createReport, null);
 
   useEffect(() => {
     if (state?.message) {

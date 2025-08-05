@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Header() {
   return (
@@ -10,7 +14,7 @@ export default function Header() {
           <div className="bg-primary/20 p-2 rounded-lg">
             <BrainCircuit className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="hidden sm:inline">MindSync Monitor</span>
+          <span className="hidden sm:inline">Neurowell</span>
         </Link>
         <nav className="flex items-center gap-4">
           <Button asChild variant="ghost">
@@ -18,6 +22,9 @@ export default function Header() {
           </Button>
           <Button asChild style={{backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))'}} className="transition-transform hover:scale-105">
             <Link href="/dashboard">Dashboard</Link>
+          </Button>
+          <Button variant="ghost" onClick={() => signOut(auth)}>
+            Logout
           </Button>
         </nav>
       </div>

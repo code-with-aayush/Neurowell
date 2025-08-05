@@ -16,7 +16,7 @@ export default function Home() {
             MindSync Monitor is a revolutionary device that tracks key biometric signals to provide you with a holistic view of your mental state, offering AI-powered insights to guide you towards a healthier, more balanced life.
           </p>
           <div className="flex justify-center">
-            <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-7 px-8">
+            <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-7 px-8 font-button">
               <Link href="/dashboard">Start Monitoring</Link>
             </Button>
           </div>
@@ -27,17 +27,17 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div className="rounded-lg overflow-hidden shadow-2xl">
             <Image
-              src="/home/user/studio/.idx/hero-image.jpg"
-              alt="MindSync Device in use"
+              src="/hero-image.jpg"
+              alt="Neurowell Device in use"
               width={1920}
-              height={1080}
+              height={400}
               className="w-full h-auto object-cover"
               data-ai-hint="wellness technology"
             />
           </div>
           <div className="text-left">
             <h2 className="text-3xl font-bold font-headline mb-6">Simple Steps to a Clearer Mind</h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-lg text-muted-foreground mb-8">
               Getting started with MindSync is effortless. Our streamlined process ensures you can focus on what truly matters - your wellbeing.
             </p>
             <div className="space-y-6">
