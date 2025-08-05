@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const showHeaderAndFooter = !['/login', '/signup'].includes(pathname);
+  const showFooter = !['/login', '/signup'].includes(pathname);
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
@@ -27,11 +27,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full bg-background">
         <div className="flex flex-col min-h-screen">
-          {showHeaderAndFooter && <Header />}
+          <Header />
           <main className="flex-grow">
             {children}
           </main>
-          {showHeaderAndFooter && <Footer />}
+          {showFooter && <Footer />}
         </div>
         <Toaster />
       </body>
