@@ -1,81 +1,84 @@
-// This is the Arduino sketch. You should upload this to your Arduino UNO.
-
 #include <LiquidCrystal.h>
 
-// Initialize the library with the numbers of the interface pins
+// -- Configuration --
+// Initialize the LiquidCrystal library with the numbers of the interface pins
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
-// Sensor Pins (for when you integrate them)
-#define GSR_PIN A1
-#define ECG_PIN A0
+// Variables for cycling through display values
+int displayState = 0;
+unsigned long lastDisplayChangeTime = 0;
+const int DISPLAY_INTERVAL = 2000; // 2 seconds
 
 void setup() {
+  // Start serial communication at 9600 bits per second:
   Serial.begin(9600);
   
-  // set up the LCD's number of columns and rows:
+  // Set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   
-  // Use an unused analog pin to seed the random number generator
-  randomSeed(analogRead(A2)); 
-
+  // Seed the random number generator with an unused analog pin for better randomness
+  randomSeed(analogRead(A0)); 
+  
   lcd.print("Device Ready");
   lcd.setCursor(0, 1);
   lcd.print("Starting...");
-  delay(2000);
+  delay(1500);
 }
 
 void loop() {
-  // --- Simulate Sensor Readings ---
-  // Once the connection is stable, you can replace these with your actual sensor reading functions.
-  float heartRate = random(70, 95);          // Normal resting heart rate
-  float spo2 = random(950, 999) / 10.0;      // SpO2 percentage
-  float ecg = random(0, 1023) / 1023.0 * 3.3; // ECG value (normalized to voltage for example)
-  float gsr = random(200, 800) / 100.0;      // GSR in microSiemens
+  // --- 1. Simulate Sensor Readings ---
+  // These values are designed to look like real data.
+  int heartRate = random(65, 85);       // Typical resting heart rate
+  float spo2 = random(950, 995) / 10.0; // Normal SpO2 is 95-100%
+  float gsr = random(10, 50) / 10.0;    // Galvanic Skin Response (stress)
+  float ecg = random(500, 1500) / 1000.0; // ECG signal voltage
 
-  // --- Display on LCD ---
-  // The display will cycle through the values every few seconds
-  static int displayState = 0;
-  
-  lcd.clear();
-  lcd.setCursor(0, 0);
+  // --- 2. Create JSON String ---
+  // This format must exactly match what the web dashboard expects.
+  // Example: {"heartRate":75,"spo2":98.5,"gsr":2.5,"ecg":1.23}
+  String jsonString = "{";
+  jsonString += "\"heartRate\":" + String(heartRate) + ",";
+  jsonString += "\"spo2\":" + String(spo2, 1) + ",";
+  jsonString += "\"gsr\":" + String(gsr, 1) + ",";
+  jsonString += "\"ecg\":" + String(ecg, 2);
+  jsonString += "}";
 
-  switch(displayState) {
-    case 0:
-      lcd.print("HR: ");
-      lcd.print((int)heartRate);
-      lcd.print(" BPM");
-      break;
-    case 1:
-      lcd.print("SpO2: ");
-      lcd.print(spo2, 1);
-      lcd.print("%");
-      break;
-    case 2:
-      lcd.print("GSR: ");
-      lcd.print(gsr, 1);
-      lcd.print(" uS");
-      break;
+  // --- 3. Send JSON to Web Page ---
+  // The 'println' adds a newline character, which helps the web page know when a message is complete.
+  Serial.println(jsonString);
+
+  // --- 4. Update LCD Display ---
+  // This section cycles through showing each vital sign on the LCD.
+  unsigned long currentTime = millis();
+  if (currentTime - lastDisplayChangeTime > DISPLAY_INTERVAL) {
+    lastDisplayChangeTime = currentTime;
+    displayState = (displayState + 1) % 3; // Cycle through 3 states (0, 1, 2)
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+
+    switch (displayState) {
+      case 0:
+        lcd.print("HR: ");
+        lcd.print(heartRate);
+        lcd.print(" BPM");
+        break;
+      case 1:
+        lcd.print("SpO2: ");
+        lcd.print(spo2, 1);
+        lcd.print("%");
+        break;
+      case 2:
+        lcd.print("GSR: ");
+        lcd.print(gsr, 1);
+        lcd.print(" uS");
+        break;
+    }
+    // Indicate that data is being sent
+    lcd.setCursor(0, 1);
+    lcd.print("Status: Sending");
   }
-
-  displayState = (displayState + 1) % 3; // Cycle through 0, 1, 2
-
-
-  // --- Send data as a JSON string to Serial ---
-  // This is the format the website expects
-  Serial.print("{");
-  Serial.print("\"heartRate\":");
-  Serial.print(heartRate);
-  Serial.print(",");
-  Serial.print("\"spo2\":");
-  Serial.print(spo2);
-  Serial.print(",");
-  Serial.print("\"ecg\":");
-  Serial.print(ecg);
-  Serial.print(",");
-  Serial.print("\"gsr\":");
-  Serial.print(gsr);
-  Serial.println("}"); // Use println to add a newline, which signifies the end of the message
-
-  // Wait for 1 second before sending the next set of data
-  delay(1000);
+  
+  // Wait for a second before the next loop
+  delay(1000); 
 }
