@@ -339,3 +339,5 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
+
+    
