@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -41,16 +42,18 @@ export default function Header() {
           <BrainCircuit className="h-7 w-7 text-primary" />
           <span className="font-semibold">MindWave</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-2">
-           {navLinks.map((link) => (
-            <Button key={link.href} asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="rounded-full">
-              <Link href={link.href} className="flex items-center gap-2">
-                <link.icon className="h-4 w-4"/>
-                {link.label}
-              </Link>
-            </Button>
-          ))}
-        </nav>
+        {!isAuthPage && (
+          <nav className="hidden md:flex items-center gap-2">
+            {navLinks.map((link) => (
+              <Button key={link.href} asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="rounded-full">
+                <Link href={link.href} className="flex items-center gap-2">
+                  <link.icon className="h-4 w-4"/>
+                  {link.label}
+                </Link>
+              </Button>
+            ))}
+          </nav>
+        )}
         <div className="flex items-center gap-2">
           {user ? (
             <Button variant="outline" onClick={handleLogout} className="rounded-full">
