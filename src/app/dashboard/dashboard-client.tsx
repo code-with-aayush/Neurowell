@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { Heart, Droplets, Activity, Zap, Play, Loader2, AlertCircle } from 'lucide-react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
@@ -20,8 +20,16 @@ const initialDataState = {
   gsr: [] as DataPoint[],
 };
 
+const initialLatestValues = {
+  heartRate: 0,
+  spo2: 0,
+  ecg: 0,
+  gsr: 0,
+}
+
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
+  const [latestValues, setLatestValues] = useState(initialLatestValues);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,12 +49,21 @@ export default function DashboardClient() {
           
           const maxPoints = 20;
 
-          return {
+          const newData = {
             heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
             spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
             ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
             gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
           };
+
+          setLatestValues({
+            heartRate: newHeartRatePoint.value,
+            spo2: newSpo2Point.value,
+            ecg: newEcgPoint.value,
+            gsr: newGsrPoint.value,
+          });
+
+          return newData;
         });
       }, 100);
     }
@@ -77,6 +94,7 @@ export default function DashboardClient() {
 
   const startMonitoring = () => {
     setData(initialDataState);
+    setLatestValues(initialLatestValues);
     setError(null);
     setIsMonitoring(true);
     
@@ -86,8 +104,6 @@ export default function DashboardClient() {
 
     monitoringTimeoutRef.current = setTimeout(() => {
       setIsMonitoring(false);
-      // We need to use a functional update for setData to get the latest state
-      // inside the timeout callback.
       setData(currentData => {
         handleGenerateReport(currentData);
         return currentData; 
@@ -122,11 +138,6 @@ export default function DashboardClient() {
     }
   }
   
-  const latestHeartRate = data.heartRate.length > 0 ? data.heartRate[data.heartRate.length - 1].value : 0;
-  const latestSpo2 = data.spo2.length > 0 ? data.spo2[data.spo2.length - 1].value : 0;
-  const latestEcg = data.ecg.length > 0 ? data.ecg[data.ecg.length-1].value : 0;
-  const latestGsr = data.gsr.length > 0 ? data.gsr[data.gsr.length-1].value : 0;
-
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
@@ -189,10 +200,10 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestHeartRate.toFixed(0)} unit="BPM" status="ok" />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestSpo2.toFixed(0)}%`} unit="" status="ok" />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={latestEcg.toFixed(2)} unit="mV" status="ok" />
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestGsr.toFixed(2)} unit="μS" status="ok" />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" status="ok" />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(0)}%`} unit="" status="ok" />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" status="ok" />
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" status="ok" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -290,5 +301,3 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
-
-    
