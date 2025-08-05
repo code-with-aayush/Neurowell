@@ -43,7 +43,7 @@ export default function LoginPage() {
   }, [state]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-3xl font-bold">Login</CardTitle>
@@ -59,7 +59,7 @@ export default function LoginPage() {
               <Input id="password" name="password" type="password" autoComplete="current-password" required className="mt-1" />
             </div>
             <SubmitButton />
-            {state?.message && <p className="text-red-500 text-sm">{state.message}</p>}
+            {state?.message && <p className="text-destructive text-sm">{state.message}</p>}
           </form>
         </CardContent>
       </Card>

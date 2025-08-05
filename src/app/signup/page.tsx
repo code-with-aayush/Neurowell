@@ -4,30 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-
-async function signUpAction(prevState: any, formData: FormData) {
-  "use server";
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    await setDoc(doc(db, 'users', user.uid), {
-      email: user.email,
-    });
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
+import { signUpAction } from './actions';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -51,7 +31,7 @@ export default function SignUpPage() {
   }, [state]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center text-3xl font-bold">Sign Up</CardTitle>
@@ -67,7 +47,7 @@ export default function SignUpPage() {
               <Input id="password" name="password" type="password" required className="mt-1" autoComplete="new-password" />
             </div>
             <SubmitButton />
-            {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+            {state?.error && <p className="text-destructive text-sm">{state.error}</p>}
           </form>
         </CardContent>
       </Card>
