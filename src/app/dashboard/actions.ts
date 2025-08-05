@@ -14,11 +14,15 @@ export async function createReport(
   formData: FormData
 ) {
   try {
-    // Hardcoded data provided by the user
-    const heartRate = 74;
-    const spo2 = 95;
-    const ecg = 1.44;
-    const gsr = 2.02;
+    const heartRateData = JSON.parse(formData.get('heartRate') as string);
+    const spo2Data = JSON.parse(formData.get('spo2') as string);
+    const ecgData = JSON.parse(formData.get('ecg') as string);
+    const gsrData = JSON.parse(formData.get('gsr') as string);
+    
+    const heartRate = average(heartRateData.map((d: any) => d.value));
+    const spo2 = average(spo2Data.map((d: any) => d.value));
+    const ecg = average(ecgData.map((d: any) => d.value));
+    const gsr = average(gsrData.map((d: any) => d.value));
 
     const userProfile = "A 35-year-old individual interested in monitoring their general wellness and stress levels. No known chronic conditions, but experiences occasional anxiety.";
   

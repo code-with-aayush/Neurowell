@@ -1,13 +1,12 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
-import Link from 'next/link';
+import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createReport } from './actions';
 
@@ -15,12 +14,10 @@ import { createReport } from './actions';
 type DataPoint = { time: string; value: number };
 
 const initialDataState = {
-  heartRate: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) })),
-  spo2: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) })),
-  ecgSignal: 0.52,
-  stressLevel: 2,
-  ecg: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 })),
-  gsr: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 })),
+  heartRate: [] as DataPoint[],
+  spo2: [] as DataPoint[],
+  ecg: [] as DataPoint[],
+  gsr: [] as DataPoint[],
 };
 
 function SubmitButton() {
@@ -42,38 +39,53 @@ function SubmitButton() {
   );
 }
 
-
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
-  const [isMonitoring, setIsMonitoring] = useState(true);
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [isCollecting, setIsCollecting] = useState(false);
   const [state, formAction] = useFormState(createReport, null);
-
+  const monitoringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!isMonitoring) return;
+    let interval: NodeJS.Timeout | undefined;
+    if (isCollecting) {
+      interval = setInterval(() => {
+        setData(prevData => {
+          const newEcgPoint = { time: new Date().toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 };
+          const newGsrPoint = { time: new Date().toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 };
+          const newHeartRatePoint = { time: new Date().toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) };
+          const newSpo2Point = { time: new Date().toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) };
+          
+          const maxPoints = 20; // Keep 2 seconds of data (10 points per second assumption)
 
-    const interval = setInterval(() => {
-      setData(prevData => {
-        const newEcgPoint = { time: new Date().toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 };
-        const newGsrPoint = { time: new Date().toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 };
-        const newHeartRatePoint = { time: new Date().toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) };
-        const newSpo2Point = { time: new Date().toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) };
-
-        return {
-          ...prevData,
-          heartRate: [...prevData.heartRate.slice(1), newHeartRatePoint],
-          spo2: [...prevData.spo2.slice(1), newSpo2Point],
-          ecgSignal: newEcgPoint.value.toFixed(2),
-          stressLevel: newGsrPoint.value.toFixed(2),
-          ecg: [...prevData.ecg.slice(1), newEcgPoint],
-          gsr: [...prevData.gsr.slice(1), newGsrPoint],
-        };
-      });
-    }, 1000);
-
+          return {
+            heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
+            spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
+            ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
+            gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
+          };
+        });
+      }, 100);
+    }
     return () => clearInterval(interval);
-  }, [isMonitoring]);
+  }, [isCollecting]);
 
+
+  const startMonitoring = () => {
+    setData(initialDataState); // Reset data
+    setIsMonitoring(true);
+    setIsCollecting(true);
+
+    if (monitoringTimeoutRef.current) {
+      clearTimeout(monitoringTimeoutRef.current);
+    }
+
+    monitoringTimeoutRef.current = setTimeout(() => {
+      setIsMonitoring(false);
+      setIsCollecting(false);
+    }, 2000);
+  };
+  
   const chartConfig = {
     value: {
       label: "Value",
@@ -103,6 +115,8 @@ export default function DashboardClient() {
   
   const latestHeartRate = data.heartRate.length > 0 ? data.heartRate[data.heartRate.length - 1].value : 0;
   const latestSpo2 = data.spo2.length > 0 ? data.spo2[data.spo2.length - 1].value : 0;
+  const latestEcg = data.ecg.length > 0 ? data.ecg[data.ecg.length-1].value : 0;
+  const latestGsr = data.gsr.length > 0 ? data.gsr[data.gsr.length-1].value : 0;
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8">
@@ -113,11 +127,24 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-             <Button variant="outline" onClick={() => setIsMonitoring(!isMonitoring)}>
-              <Play className="mr-2 h-4 w-4" />
-              {isMonitoring ? 'Pause Monitoring' : 'Start Monitoring'}
+             <Button variant="outline" onClick={startMonitoring} disabled={isCollecting}>
+              {isCollecting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Monitoring...
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Monitoring
+                </>
+              )}
             </Button>
             <form action={formAction}>
+              <input type="hidden" name="heartRate" value={JSON.stringify(data.heartRate)} />
+              <input type="hidden" name="spo2" value={JSON.stringify(data.spo2)} />
+              <input type="hidden" name="ecg" value={JSON.stringify(data.ecg)} />
+              <input type="hidden" name="gsr" value={JSON.stringify(data.gsr)} />
               <SubmitButton />
             </form>
           </div>
@@ -148,17 +175,17 @@ export default function DashboardClient() {
               </div>
                <div className="flex items-center gap-2 text-gray-600 bg-gray-200 px-3 py-1 rounded-full text-sm font-medium">
                 <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-500'}`} />
-                <span>{isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}</span>
+                <span>{isMonitoring ? 'Monitoring Active' : (isCollecting ? 'Initializing...' : 'Monitoring Paused')}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestHeartRate} unit="BPM" status="ok" />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestSpo2}%`} unit="" status="ok" />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={data.ecgSignal} unit="mV" status="ok" />
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={data.stressLevel} unit="μS" status="ok" />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestHeartRate.toFixed(0)} unit="BPM" status="ok" />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestSpo2.toFixed(0)}%`} unit="" status="ok" />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestEcg.toFixed(2)} unit="mV" status="ok" />
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestGsr.toFixed(2)} unit="μS" status="ok" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -167,7 +194,7 @@ export default function DashboardClient() {
                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                 <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                 <YAxis domain={[0, 3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                  <defs>
                     <linearGradient id="colorEcg" x1="0" y1="0" x2="0" y2="1">
@@ -180,7 +207,6 @@ export default function DashboardClient() {
              </ChartContainer>
           </ChartCard>
           <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring}>
-            {isMonitoring ? (
               <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false}/>
@@ -196,18 +222,6 @@ export default function DashboardClient() {
                   <Area type="monotone" dataKey="value" stroke="hsl(var(--accent))" fill="url(#colorGsr)" strokeWidth={2} dot={false} />
                 </AreaChart>
               </ChartContainer>
-            ) : (
-               <div className="h-[250px] w-full flex items-center justify-center bg-gray-50 rounded-md">
-                <Card className="w-2/3 text-center">
-                    <CardHeader>
-                      <CardTitle>Monitoring Stopped</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>Data collection has been paused.</p>
-                    </CardContent>
-                  </Card>
-              </div>
-            )}
            </ChartCard>
         </div>
 
@@ -224,7 +238,7 @@ export default function DashboardClient() {
   );
 }
 
-const VitalSignCard = ({ icon: Icon, title, value, unit, status }) => (
+const VitalSignCard = ({ icon: Icon, title, value, unit, status }: { icon: any, title: string, value: string | number, unit: string, status: string }) => (
   <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
     <CardContent className="p-4">
       <div className="flex justify-between items-start mb-2">
@@ -243,7 +257,7 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, status }) => (
   </Card>
 );
 
-const ChartCard = ({ title, isPaused, children }) => (
+const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boolean, children: React.ReactNode }) => (
   <Card className="bg-white shadow-sm">
     <CardHeader className="flex flex-row justify-between items-center">
       <CardTitle className="font-semibold text-gray-800">{title}</CardTitle>
@@ -258,7 +272,7 @@ const ChartCard = ({ title, isPaused, children }) => (
   </Card>
 )
 
-const InsightCard = ({ title, text, color, dotColor }) => (
+const InsightCard = ({ title, text, color, dotColor }: { title: string, text: string, color: string, dotColor: string }) => (
   <Card className={`${color} border-0 shadow-sm`}>
     <CardContent className="p-5">
       <div className="flex items-center gap-2 mb-2">
@@ -269,5 +283,3 @@ const InsightCard = ({ title, text, color, dotColor }) => (
     </CardContent>
   </Card>
 )
-
-    
