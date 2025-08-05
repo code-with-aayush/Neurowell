@@ -5,7 +5,7 @@
 #define GSR_PIN A1
 #define ECG_PIN A0
 
-// Initialize LCD 
+// Initialize LCD
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 // Data storage for 5 seconds of readings (1 reading/sec)
@@ -75,7 +75,7 @@ void sendData() {
     Serial.print("],\"ecg\":[");
     printFloatArray(ecgReadings, numReadings);
 
-    // End JSON object
+    // End JSON object - use print() not println() to avoid extra newline
     Serial.print("]}");
 
     lcd.setCursor(0, 1);

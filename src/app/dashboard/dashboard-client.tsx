@@ -336,7 +336,7 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <ChartCard title="ECG Waveform" isPaused={!isMonitoring}>
+           <ChartCard title="ECG Waveform" isPaused={!isMonitoring && data.ecg.length === 0}>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -353,7 +353,7 @@ export default function DashboardClient() {
                </AreaChart>
              </ChartContainer>
           </ChartCard>
-          <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring}>
+          <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring && data.gsr.length === 0}>
               <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false}/>
@@ -430,5 +430,4 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
-
     
