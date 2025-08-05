@@ -93,10 +93,10 @@ export default function DashboardClient() {
                       gsr: last(gsrData)
                     });
                     
-                    // Wait for 5 seconds before generating the report
+                    // Wait for 15 seconds before generating the report
                     setTimeout(() => {
                         handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
-                    }, 5000);
+                    }, 15000);
 
 
                     buffer = buffer.substring(jsonEnd + 1);
