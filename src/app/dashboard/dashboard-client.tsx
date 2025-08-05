@@ -39,6 +39,7 @@ export default function DashboardClient() {
   // Ref to hold the serial port reader
   const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
   const portRef = useRef<any | null>(null); // To keep track of the port
+  const keepReading = useRef(false);
 
 
   const readFromSerialPort = async () => {
@@ -47,7 +48,7 @@ export default function DashboardClient() {
     const textDecoder = new TextDecoder();
     let partialData = '';
 
-    while (isDeviceConnected) {
+    while (keepReading.current) {
       try {
         const { value, done } = await readerRef.current.read();
         if (done) {
@@ -57,7 +58,6 @@ export default function DashboardClient() {
         
         partialData += textDecoder.decode(value, { stream: true });
         
-        // Process complete lines (JSON objects)
         let newlineIndex;
         while ((newlineIndex = partialData.indexOf('\n')) !== -1) {
           const line = partialData.substring(0, newlineIndex).trim();
@@ -72,6 +72,7 @@ export default function DashboardClient() {
                 setData(prevData => {
                   const maxPoints = 20;
 
+                  // Use ECG value from arduino for the chart
                   const newEcgPoint = { time: newTime, value: sensorData.ecg };
                   const newGsrPoint = { time: newTime, value: sensorData.gsr };
                   const newHeartRatePoint = { time: newTime, value: sensorData.heartRate };
@@ -95,14 +96,17 @@ export default function DashboardClient() {
                 });
               }
             } catch (e) {
-              console.warn("Could not parse JSON from serial:", line);
+              console.warn("Could not parse JSON from serial:", line, e);
             }
           }
         }
       } catch (err: any) {
-        console.error("Error reading from serial port:", err);
-        setError("Error reading from device. It may have been disconnected.");
-        setIsDeviceConnected(false);
+        if (err.name !== 'AbortError') {
+            console.error("Error reading from serial port:", err);
+            setError("Error reading from device. It may have been disconnected.");
+            setIsDeviceConnected(false);
+            keepReading.current = false;
+        }
         break;
       }
     }
@@ -115,9 +119,6 @@ export default function DashboardClient() {
     setIsGenerating(true);
     setError(null);
     
-    // Stop monitoring before generating the report
-    setIsMonitoring(false);
-
     const formData = new FormData();
     formData.append('heartRate', JSON.stringify(data.heartRate));
     formData.append('spo2', JSON.stringify(data.spo2));
@@ -155,12 +156,12 @@ export default function DashboardClient() {
         await port.open({ baudRate: 9600 });
         portRef.current = port;
         
-        readerRef.current = port.readable.getReader();
         setIsDeviceConnected(true);
         setError(null);
         console.log("Device connected successfully!");
 
-        // Start reading from the port
+        keepReading.current = true;
+        readerRef.current = port.readable.getReader();
         readFromSerialPort();
 
       } catch (err) {
@@ -174,13 +175,23 @@ export default function DashboardClient() {
   };
 
   const handleDisconnectDevice = async () => {
+    keepReading.current = false;
     if (readerRef.current) {
-        await readerRef.current.cancel();
-        readerRef.current.releaseLock();
-        readerRef.current = null;
+        try {
+            await readerRef.current.cancel();
+        } catch (error) {
+            // Ignore cancel error
+        } finally {
+            readerRef.current.releaseLock();
+            readerRef.current = null;
+        }
     }
     if (portRef.current) {
-        await portRef.current.close();
+        try {
+            await portRef.current.close();
+        } catch (error) {
+            // Ignore close error
+        }
         portRef.current = null;
     }
     setIsDeviceConnected(false);
