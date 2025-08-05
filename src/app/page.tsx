@@ -27,10 +27,10 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div className="rounded-lg overflow-hidden shadow-2xl">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="/home/user/studio/.idx/hero-image.jpg"
               alt="MindSync Device in use"
-              width={600}
-              height={400}
+              width={1920}
+              height={1080}
               className="w-full h-auto object-cover"
               data-ai-hint="wellness technology"
             />
