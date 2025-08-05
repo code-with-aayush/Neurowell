@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
-export async function signUpAction(prevState: any, formData: FormData) {
+export async function signUpAction(prevState: any, formData: FormData): Promise<{ success: boolean, error: string | null }> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -19,7 +19,7 @@ export async function signUpAction(prevState: any, formData: FormData) {
     await setDoc(doc(db, 'users', user.uid), {
       email: user.email,
     });
-    return { success: true };
+    return { success: true, error: null };
   } catch (error: any) {
     let message = 'An unknown error occurred.';
     if (error.code) {

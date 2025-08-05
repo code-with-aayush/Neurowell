@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -43,7 +44,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending} className="w-full transition-transform hover:scale-105">
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       Sign In
     </Button>
@@ -52,38 +53,39 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const [state, formAction] = useFormState(login, null);
+  const router = useRouter();
 
   useEffect(() => {
     if (state?.success) {
-      window.location.href = '/';
+      router.push('/');
     }
-  }, [state]);
+  }, [state, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="flex min-h-[calc(100vh-128px)] items-center justify-center bg-gradient-to-br from-background to-secondary px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md shadow-2xl transition-all hover:shadow-primary/20">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your wellness dashboard.</CardDescription>
+          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Welcome Back</CardTitle>
+          <CardDescription className="text-muted-foreground">Sign in to access your wellness dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="space-y-4">
+          <form action={formAction} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+              <Input id="email" name="email" type="email" placeholder="m@example.com" required className="transition-all focus:ring-2 focus:ring-primary/50"/>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
+              <Input id="password" name="password" type="password" required className="transition-all focus:ring-2 focus:ring-primary/50"/>
             </div>
-            {state?.message && <p className="text-sm text-destructive">{state.message}</p>}
+            {state?.message && <p className="text-sm font-medium text-destructive">{state.message}</p>}
             <SubmitButton />
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
            <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-semibold text-primary underline-offset-4 hover:underline">
+              <Link href="/signup" className="font-semibold text-primary underline-offset-4 transition-colors hover:text-primary/80">
                 Sign up
               </Link>
             </p>
