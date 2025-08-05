@@ -8,6 +8,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
 import Link from 'next/link';
+import { useFormState, useFormStatus } from 'react-dom';
+import { createReport } from './actions';
 
 
 type DataPoint = { time: string; value: number };
@@ -21,9 +23,31 @@ const initialDataState = {
   gsr: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 })),
 };
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="outline" disabled={pending}>
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generating...
+        </>
+      ) : (
+        <>
+          <FileDown className="mr-2 h-4 w-4" />
+          Generate Report
+        </>
+      )}
+    </Button>
+  );
+}
+
+
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
   const [isMonitoring, setIsMonitoring] = useState(true);
+  const [state, formAction] = useFormState(createReport, null);
+
 
   useEffect(() => {
     if (!isMonitoring) return;
@@ -93,14 +117,23 @@ export default function DashboardClient() {
               <Play className="mr-2 h-4 w-4" />
               {isMonitoring ? 'Pause Monitoring' : 'Start Monitoring'}
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/report">
-                <FileDown className="mr-2 h-4 w-4" />
-                View Report
-              </Link>
-            </Button>
+            <form action={formAction}>
+              <SubmitButton />
+            </form>
           </div>
         </header>
+
+         {state?.message && (
+          <Card className="bg-red-50 border-red-200 mb-8">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertCircle className="text-red-600" />
+              <div>
+                <CardTitle className="text-base font-semibold text-red-800">Report Generation Failed</CardTitle>
+                <CardDescription className="text-red-600">{state.message}</CardDescription>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-purple-50 border-purple-200 mb-8">
           <CardContent className="p-4 flex justify-between items-center">
@@ -236,7 +269,5 @@ const InsightCard = ({ title, text, color, dotColor }) => (
     </CardContent>
   </Card>
 )
-
-    
 
     

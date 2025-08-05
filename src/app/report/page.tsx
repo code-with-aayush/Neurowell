@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Download, TrendingUp, Heart, Zap, Smile, Shield, Activity, Bell, Droplets, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 
@@ -46,35 +47,17 @@ const PriorityBadge = ({ priority }: {priority: 'HIGH' | 'MEDIUM' | 'LOW' }) => 
 }
 
 function ReportContent() {
-    const staticReport = {
-    summary: 'Based on your recent data, your overall health score is 88/100. Your cardiovascular metrics are strong, and stress levels are mostly within a healthy range. Maintaining consistent sleep and hydration will further improve your well-being.',
-    recommendations: [
-      {
-        title: 'Maintain Consistent Sleep Schedule',
-        description: 'Aim for 7-8 hours of sleep per night, even on weekends, to improve recovery and cognitive function.',
-        priority: 'HIGH',
-      },
-      {
-        title: 'Mindful Stress Management',
-        description: 'Incorporate short mindfulness exercises or breathing techniques during your workday to manage occasional stress spikes.',
-        priority: 'MEDIUM',
-      },
-      {
-        title: 'Increase Daily Hydration',
-        description: 'Carry a water bottle and aim to drink at least 2 liters of water throughout the day for optimal physical and mental performance.',
-        priority: 'LOW',
-      },
-      {
-        title: 'Incorporate Light Physical Activity',
-        description: 'A 20-30 minute walk each day can significantly boost your mood and cardiovascular health.',
-        priority: 'MEDIUM',
-      },
-    ],
-    avgHr: '74',
-    avgStress: '2.0',
-  };
+  const searchParams = useSearchParams();
 
-  const { summary, recommendations, avgHr, avgStress } = staticReport;
+  const summary = searchParams.get('summary') || 'Based on your recent data, your overall health score is 88/100. Your cardiovascular metrics are strong, and stress levels are mostly within a healthy range.';
+  const recommendationsStr = searchParams.get('suggestions');
+  const recommendations = recommendationsStr ? JSON.parse(recommendationsStr) : [
+    { title: 'Maintain Consistent Sleep', description: 'Aim for 7-8 hours of sleep per night.', priority: 'HIGH' },
+    { title: 'Mindful Stress Management', description: 'Incorporate short mindfulness exercises.', priority: 'MEDIUM' },
+  ];
+  const avgHr = searchParams.get('avgHr') || '74';
+  const avgStress = searchParams.get('avgStress') || '2.0';
+
   const overallScore = summary.match(/\d+\/\d+/)?.[0] || '88/100';
 
 
