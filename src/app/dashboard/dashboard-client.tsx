@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useActionState } from 'react';
@@ -9,13 +10,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { useToast } from '@/hooks/use-toast';
 import { Heart, Droplets, Activity, Zap, Play, FileDown, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
-import Link from 'next/link';
+
 
 type DataPoint = { time: string; value: number };
 
 const initialDataState = {
-  heartRate: 84,
-  spo2: 96,
+  heartRate: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) })),
+  spo2: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) })),
   ecgSignal: 0.52,
   stressLevel: 2,
   ecg: Array.from({ length: 100 }, (_, i) => ({ time: new Date(Date.now() - (100 - i) * 100).toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 })),
@@ -28,7 +29,7 @@ function GenerateReportButton() {
   return (
     <Button type="submit" variant="outline" disabled={pending}>
       {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-      {pending ? 'Generating...' : 'Generate PDF Report'}
+ {pending ? 'Generating...' : 'Generate Report'}
     </Button>
   );
 }
@@ -57,13 +58,15 @@ export default function DashboardClient() {
       setData(prevData => {
         const newEcgPoint = { time: new Date().toLocaleTimeString(), value: 1.5 + (Math.random() - 0.5) * 0.4 };
         const newGsrPoint = { time: new Date().toLocaleTimeString(), value: 2 + (Math.random() - 0.5) * 1.5 };
+        const newHeartRatePoint = { time: new Date().toLocaleTimeString(), value: 70 + Math.floor(Math.random() * 25) };
+        const newSpo2Point = { time: new Date().toLocaleTimeString(), value: 95 + Math.floor(Math.random() * 5) };
 
         return {
           ...prevData,
-          heartRate: 70 + Math.floor(Math.random() * 25),
-          spo2: 95 + Math.floor(Math.random() * 5),
-          ecgSignal: (1.5 + (Math.random() - 0.5) * 0.4).toFixed(2),
-          stressLevel: (2 + (Math.random() - 0.5) * 1.5).toFixed(2),
+          heartRate: [...prevData.heartRate.slice(1), newHeartRatePoint],
+          spo2: [...prevData.spo2.slice(1), newSpo2Point],
+          ecgSignal: newEcgPoint.value.toFixed(2),
+          stressLevel: newGsrPoint.value.toFixed(2),
           ecg: [...prevData.ecg.slice(1), newEcgPoint],
           gsr: [...prevData.gsr.slice(1), newGsrPoint],
         };
@@ -99,6 +102,9 @@ export default function DashboardClient() {
       dotColor: 'bg-blue-500'
     }
   }
+  
+  const latestHeartRate = data.heartRate.length > 0 ? data.heartRate[data.heartRate.length - 1].value : 0;
+  const latestSpo2 = data.spo2.length > 0 ? data.spo2[data.spo2.length - 1].value : 0;
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8">
@@ -114,18 +120,12 @@ export default function DashboardClient() {
               {isMonitoring ? 'Pause Monitoring' : 'Start Monitoring'}
             </Button>
             <form action={formAction}>
-              <input type="hidden" name="heartRateData" value={JSON.stringify([data.heartRate])} />
-              <input type="hidden" name="spo2Data" value={JSON.stringify([data.spo2])} />
+              <input type="hidden" name="heartRateData" value={JSON.stringify(data.heartRate.map(d => d.value))} />
+              <input type="hidden" name="spo2Data" value={JSON.stringify(data.spo2.map(d => d.value))} />
               <input type="hidden" name="ecgData" value={JSON.stringify(data.ecg.map(d => d.value))} />
               <input type="hidden" name="gsrData" value={JSON.stringify(data.gsr.map(d => d.value))} />
               <GenerateReportButton />
-            </form>
-            <Button asChild>
-              <Link href="/report">
-                <Eye className="mr-2 h-4 w-4" />
-                View Report
-              </Link>
-            </Button>
+ </form>
           </div>
         </header>
 
@@ -149,8 +149,8 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={data.heartRate} unit="BPM" status="ok" />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${data.spo2}%`} unit="" status="ok" />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestHeartRate} unit="BPM" status="ok" />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestSpo2}%`} unit="" status="ok" />
           <VitalSignCard icon={Activity} title="ECG Signal" value={data.ecgSignal} unit="mV" status="ok" />
           <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={data.stressLevel} unit="μS" status="ok" />
         </div>
@@ -263,3 +263,5 @@ const InsightCard = ({ title, text, color, dotColor }) => (
     </CardContent>
   </Card>
 )
+
+    
