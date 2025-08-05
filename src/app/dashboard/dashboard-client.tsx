@@ -66,33 +66,31 @@ export default function DashboardClient() {
           if (line) {
             try {
               const sensorData = JSON.parse(line);
-              const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               
               if(isMonitoring) {
+                const newTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
                 setData(prevData => {
                   const maxPoints = 20;
 
-                  // Use ECG value from arduino for the chart
-                  const newEcgPoint = { time: newTime, value: sensorData.ecg };
-                  const newGsrPoint = { time: newTime, value: sensorData.gsr };
                   const newHeartRatePoint = { time: newTime, value: sensorData.heartRate };
                   const newSpo2Point = { time: newTime, value: sensorData.spo2 };
-
-                  const newData = {
+                  const newEcgPoint = { time: newTime, value: sensorData.ecg };
+                  const newGsrPoint = { time: newTime, value: sensorData.gsr };
+                  
+                  return {
                     heartRate: [...prevData.heartRate, newHeartRatePoint].slice(-maxPoints),
                     spo2: [...prevData.spo2, newSpo2Point].slice(-maxPoints),
                     ecg: [...prevData.ecg, newEcgPoint].slice(-maxPoints),
                     gsr: [...prevData.gsr, newGsrPoint].slice(-maxPoints),
                   };
-                  
-                  setLatestValues({
-                    heartRate: sensorData.heartRate,
-                    spo2: sensorData.spo2,
-                    ecg: sensorData.ecg,
-                    gsr: sensorData.gsr,
-                  });
-
-                  return newData;
+                });
+                
+                setLatestValues({
+                  heartRate: sensorData.heartRate,
+                  spo2: sensorData.spo2,
+                  ecg: sensorData.ecg,
+                  gsr: sensorData.gsr,
                 });
               }
             } catch (e) {
@@ -164,7 +162,7 @@ export default function DashboardClient() {
         readerRef.current = port.readable.getReader();
         readFromSerialPort();
 
-      } catch (err) {
+      } catch (err: any) {
         console.error("There was an error opening the serial port:", err);
         setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
       }
@@ -409,3 +407,5 @@ const InsightCard = ({ title, text, color, dotColor }: { title: string, text: st
     </CardContent>
   </Card>
 )
+
+    
