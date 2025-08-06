@@ -28,6 +28,8 @@ const initialLatestValues = {
   gsr: 0,
 }
 
+const REQUIRED_DATA_POINTS = 5;
+
 export default function DashboardClient() {
   const [data, setData] = useState(initialDataState);
   const [latestValues, setLatestValues] = useState(initialLatestValues);
@@ -36,7 +38,6 @@ export default function DashboardClient() {
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRedirectingOverlay, setShowRedirectingOverlay] = useState(false);
-  const [hasMonitored, setHasMonitored] = useState(false);
   
   const router = useRouter();
   
@@ -52,26 +53,23 @@ export default function DashboardClient() {
     isMonitoringRef.current = isMonitoring;
   }, [isMonitoring]);
 
-  const handleGenerateReport = async () => {
-    if (isGenerating || !hasMonitored) {
-        setError("No monitoring data available to generate a report.");
-        return;
-    }
-     if (latestValues.heartRate === 0 || latestValues.spo2 === 0 || latestValues.ecg === 0 || latestValues.gsr === 0) {
+  const handleGenerateReport = async (values: typeof initialLatestValues) => {
+    if (isGenerating) return;
+
+     if (values.heartRate === 0 || values.spo2 === 0 || values.ecg === 0 || values.gsr === 0) {
         setError("Cannot generate report with zero values. Please monitor again.");
         return;
     }
-
 
     setIsGenerating(true); 
     setShowRedirectingOverlay(true);
     setError(null);
       
     const formData = new FormData();
-    formData.append('heartRate', latestValues.heartRate.toString());
-    formData.append('spo2', latestValues.spo2.toString());
-    formData.append('ecg', latestValues.ecg.toString());
-    formData.append('gsr', latestValues.gsr.toString());
+    formData.append('heartRate', values.heartRate.toString());
+    formData.append('spo2', values.spo2.toString());
+    formData.append('ecg', values.ecg.toString());
+    formData.append('gsr', values.gsr.toString());
   
     const result = await createReport(null, formData);
   
@@ -90,13 +88,17 @@ export default function DashboardClient() {
         monitoringIntervalRef.current = null;
     }
     setIsMonitoring(false);
-    if(latestValues.heartRate > 0 || latestValues.spo2 > 0) {
-        setHasMonitored(true);
-        setShowRedirectingOverlay(true); // Show overlay immediately on stop
-        setTimeout(() => {
-          handleGenerateReport();
-        }, 5000); // 5-second delay
-    }
+    
+    // Use a function to pass the latest state to avoid stale state issues.
+    setLatestValues(currentLatestValues => {
+      if(currentLatestValues.heartRate > 0 || currentLatestValues.spo2 > 0) {
+          setShowRedirectingOverlay(true); // Show overlay immediately on stop
+          setTimeout(() => {
+            handleGenerateReport(currentLatestValues);
+          }, 5000); // 5-second delay
+      }
+      return currentLatestValues;
+    });
   }
 
   const readLoop = async () => {
@@ -151,7 +153,7 @@ export default function DashboardClient() {
 
               if (isMonitoringRef.current && isDataNonZero) {
                  nonZeroDataCountRef.current += 1;
-                 if(nonZeroDataCountRef.current >= 5) {
+                 if(nonZeroDataCountRef.current >= REQUIRED_DATA_POINTS) {
                     stopMonitoring();
                  }
               }
@@ -182,7 +184,6 @@ export default function DashboardClient() {
     setData(initialDataState);
     setError(null);
     setIsMonitoring(true);
-    setHasMonitored(false);
     nonZeroDataCountRef.current = 0;
 
     monitoringIntervalRef.current = setInterval(async () => {
@@ -255,7 +256,6 @@ export default function DashboardClient() {
 
     setIsDeviceConnected(false);
     setIsMonitoring(false);
-    setHasMonitored(false);
     setData(initialDataState);
     setLatestValues(initialLatestValues);
     console.log("Device disconnected.");
@@ -267,13 +267,26 @@ export default function DashboardClient() {
     },
   };
   
+  const getStatusMessage = () => {
+      if (showRedirectingOverlay) {
+        return 'Monitoring complete. Generating your report...';
+      }
+      if (isMonitoring) {
+        return `Monitoring... (${nonZeroDataCountRef.current}/${REQUIRED_DATA_POINTS} valid readings)`;
+      }
+      if (isDeviceConnected) {
+        return 'Device connected. Click "Start Monitoring" to begin.';
+      }
+      return 'Please connect your device to start.';
+  }
+
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
        {showRedirectingOverlay && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <h2 className="mt-4 text-xl font-semibold text-gray-700">Generating Your Report...</h2>
-          <p className="text-gray-500">Please wait while we analyze your data.</p>
+          <h2 className="mt-4 text-xl font-semibold text-gray-700">Analyzing Data & Generating Report...</h2>
+          <p className="text-gray-500">Please wait. This will take about 5 seconds.</p>
         </div>
       )}
       <div className="max-w-7xl mx-auto">
@@ -325,7 +338,7 @@ export default function DashboardClient() {
             <div>
               <CardTitle className="text-lg font-semibold text-purple-800">Current Status</CardTitle>
               <CardDescription className="text-purple-600">
-                {isMonitoring ? 'Monitoring live data...' : (hasMonitored ? 'Monitoring paused. Generating report...' : (isDeviceConnected ? 'Device connected. Click "Start Monitoring" to begin.' : 'Please connect your device to start.'))}
+                {getStatusMessage()}
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -433,5 +446,3 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
-
-    
