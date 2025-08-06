@@ -52,6 +52,52 @@ export default function DashboardClient() {
     isMonitoringRef.current = isMonitoring;
   }, [isMonitoring]);
 
+  const handleGenerateReport = async () => {
+    if (isGenerating || !hasMonitored) {
+        setError("No monitoring data available to generate a report.");
+        return;
+    }
+     if (latestValues.heartRate === 0 || latestValues.spo2 === 0 || latestValues.ecg === 0 || latestValues.gsr === 0) {
+        setError("Cannot generate report with zero values. Please monitor again.");
+        return;
+    }
+
+
+    setIsGenerating(true); 
+    setShowRedirectingOverlay(true);
+    setError(null);
+      
+    const formData = new FormData();
+    formData.append('heartRate', latestValues.heartRate.toString());
+    formData.append('spo2', latestValues.spo2.toString());
+    formData.append('ecg', latestValues.ecg.toString());
+    formData.append('gsr', latestValues.gsr.toString());
+  
+    const result = await createReport(null, formData);
+  
+    if (result.success && result.redirectUrl) {
+      router.push(result.redirectUrl);
+    } else {
+      setError(result.message);
+      setIsGenerating(false);
+      setShowRedirectingOverlay(false);
+    }
+  };
+  
+  const stopMonitoring = () => {
+    if (monitoringIntervalRef.current) {
+        clearInterval(monitoringIntervalRef.current);
+        monitoringIntervalRef.current = null;
+    }
+    setIsMonitoring(false);
+    if(latestValues.heartRate > 0 || latestValues.spo2 > 0) {
+        setHasMonitored(true);
+        setShowRedirectingOverlay(true); // Show overlay immediately on stop
+        setTimeout(() => {
+          handleGenerateReport();
+        }, 5000); // 5-second delay
+    }
+  }
 
   const readLoop = async () => {
     const textDecoder = new TextDecoder();
@@ -127,38 +173,6 @@ export default function DashboardClient() {
       }
     }
   };
-  
-  const handleGenerateReport = async () => {
-    if (isGenerating || !hasMonitored) {
-        setError("No monitoring data available to generate a report.");
-        return;
-    }
-     if (latestValues.heartRate === 0 || latestValues.spo2 === 0 || latestValues.ecg === 0 || latestValues.gsr === 0) {
-        setError("Cannot generate report with zero values. Please monitor again.");
-        return;
-    }
-
-
-    setIsGenerating(true); 
-    setShowRedirectingOverlay(true);
-    setError(null);
-      
-    const formData = new FormData();
-    formData.append('heartRate', latestValues.heartRate.toString());
-    formData.append('spo2', latestValues.spo2.toString());
-    formData.append('ecg', latestValues.ecg.toString());
-    formData.append('gsr', latestValues.gsr.toString());
-  
-    const result = await createReport(null, formData);
-  
-    if (result.success && result.redirectUrl) {
-      router.push(result.redirectUrl);
-    } else {
-      setError(result.message);
-      setIsGenerating(false);
-      setShowRedirectingOverlay(false);
-    }
-  };
 
   const startMonitoring = () => {
     if (!isDeviceConnected) {
@@ -184,17 +198,6 @@ export default function DashboardClient() {
        }
     }, 1000);
   };
-  
-  const stopMonitoring = () => {
-    if (monitoringIntervalRef.current) {
-        clearInterval(monitoringIntervalRef.current);
-        monitoringIntervalRef.current = null;
-    }
-    setIsMonitoring(false);
-    if(latestValues.heartRate > 0 || latestValues.spo2 > 0) {
-        setHasMonitored(true);
-    }
-  }
 
   const handleConnectDevice = async () => {
     if ('serial' in navigator) {
@@ -302,19 +305,6 @@ export default function DashboardClient() {
                     Stop Monitoring
                 </Button>
              )}
-             <Button onClick={handleGenerateReport} disabled={!hasMonitored || isMonitoring || isGenerating}>
-                {isGenerating ? (
-                     <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                     </>
-                ) : (
-                    <>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Generate Report
-                    </>
-                )}
-             </Button>
           </div>
         </header>
 
@@ -335,7 +325,7 @@ export default function DashboardClient() {
             <div>
               <CardTitle className="text-lg font-semibold text-purple-800">Current Status</CardTitle>
               <CardDescription className="text-purple-600">
-                {isMonitoring ? 'Monitoring live data...' : (hasMonitored ? 'Monitoring paused. Ready to generate report.' : (isDeviceConnected ? 'Device connected. Click "Start Monitoring" to begin.' : 'Please connect your device to start.'))}
+                {isMonitoring ? 'Monitoring live data...' : (hasMonitored ? 'Monitoring paused. Generating report...' : (isDeviceConnected ? 'Device connected. Click "Start Monitoring" to begin.' : 'Please connect your device to start.'))}
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -443,3 +433,5 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
