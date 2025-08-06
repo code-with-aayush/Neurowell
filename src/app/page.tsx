@@ -50,7 +50,7 @@ export default function Home() {
           </div>
           <div className="relative">
             <Image
-              src="/hero-image.jpg"
+              src="/neurowell_home.png"
               alt="A person using the NeuroWell device to monitor their wellness."
               width={600}
               height={400}
