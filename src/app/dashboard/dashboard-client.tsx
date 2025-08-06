@@ -277,17 +277,6 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-             {!isMonitoring ? (
-                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Monitoring
-                </Button>
-             ) : (
-                <Button onClick={stopMonitoring} variant="destructive">
-                    <StopCircle className="mr-2 h-4 w-4" />
-                    Stop Monitoring
-                </Button>
-             )}
               {!isDeviceConnected ? (
                 <Button onClick={startMonitoring}>
                   <Plug className="mr-2 h-4 w-4" />
@@ -297,6 +286,17 @@ export default function DashboardClient() {
                 <Button onClick={handleDisconnectDevice} variant="outline">
                     <Plug className="mr-2 h-4 w-4" />
                     Disconnect Device
+                </Button>
+             )}
+             {!isMonitoring ? (
+                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Monitoring
+                </Button>
+             ) : (
+                <Button onClick={stopMonitoring} variant="destructive">
+                    <StopCircle className="mr-2 h-4 w-4" />
+                    Stop Monitoring
                 </Button>
              )}
           </div>
@@ -386,7 +386,8 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: an
 };
 
 
-const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => (
+const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => {
+    return (
     <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
         <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-700">{title}</CardTitle>
@@ -411,6 +412,5 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
             </div>
         </CardContent>
     </Card>
-);
-
-    
+    );
+};
