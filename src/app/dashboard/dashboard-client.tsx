@@ -40,84 +40,86 @@ export default function DashboardClient() {
   
   const router = useRouter();
   
-  const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
+  const portRef = useRef<any | null>(null);
+  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<any> | null>(null);
-  const portRef = useRef<any | null>(null); 
   const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // This ref will hold the latest state, so the read loop can access it
+  const latestDataRef = useRef(data);
+  useEffect(() => {
+    latestDataRef.current = data;
+  }, [data]);
 
-  const readFromSerialPort = async () => {
-    if (!readerRef.current) return;
-    
+
+  const readLoop = async () => {
     const textDecoder = new TextDecoder();
     let buffer = '';
 
-    try {
-      // This is a simplified reader. A more robust implementation would handle streaming data chunks.
-      const { value, done } = await readerRef.current.read();
-      if (done) return;
-      
-      buffer += textDecoder.decode(value, { stream: true });
-      
-      let jsonEnd = buffer.indexOf('}');
-      if (jsonEnd !== -1) {
+    while (portRef.current?.readable) {
+      try {
+        const { value, done } = await readerRef.current!.read();
+        if (done) {
+          break;
+        }
+
+        buffer += textDecoder.decode(value, { stream: true });
+        
+        // Process all complete JSON objects in the buffer
+        let jsonEnd;
+        while ((jsonEnd = buffer.indexOf('}')) !== -1) {
           const jsonStart = buffer.lastIndexOf('{', jsonEnd);
           if (jsonStart !== -1) {
-              const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
-              
-              try {
-                  const sensorData = JSON.parse(jsonString);
-                  const now = new Date();
-                  const time = now.toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
+            const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
+            buffer = buffer.substring(jsonEnd + 1); // Remove processed part
 
-                  if (sensorData.heartRate && sensorData.heartRate.length > 0) {
-                      const newHrPoint = { time, value: sensorData.heartRate[0] };
-                      const newSpo2Point = { time, value: sensorData.spo2[0] };
-                      const newEcgPoint = { time, value: sensorData.ecg[0] };
-                      const newGsrPoint = { time, value: sensorData.gsr[0] };
+            try {
+              const sensorData = JSON.parse(jsonString);
+              const now = new Date();
+              const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-                      setData(prevData => ({
-                        heartRate: [...prevData.heartRate, newHrPoint].slice(-20),
-                        spo2: [...prevData.spo2, newSpo2Point].slice(-20),
-                        ecg: [...prevData.ecg, newEcgPoint].slice(-20),
-                        gsr: [...prevData.gsr, newGsrPoint].slice(-20),
-                      }));
-                      setLatestValues({
-                        heartRate: newHrPoint.value,
-                        spo2: newSpo2Point.value,
-                        ecg: newEcgPoint.value,
-                        gsr: newGsrPoint.value,
-                      });
-                  }
-              } catch (e) {
-                console.warn("Could not parse JSON from serial:", jsonString, e);
+              if (sensorData.heartRate && sensorData.heartRate.length > 0) {
+                const newHrPoint = { time, value: sensorData.heartRate[0] };
+                const newSpo2Point = { time, value: sensorData.spo2[0] };
+                const newEcgPoint = { time, value: sensorData.ecg[0] };
+                const newGsrPoint = { time, value: sensorData.gsr[0] };
+                
+                // Use functional updates to ensure we have the latest state
+                setData(prevData => ({
+                  heartRate: [...prevData.heartRate, newHrPoint].slice(-20),
+                  spo2: [...prevData.spo2, newSpo2Point].slice(-20),
+                  ecg: [...prevData.ecg, newEcgPoint].slice(-20),
+                  gsr: [...prevData.gsr, newGsrPoint].slice(-20),
+                }));
+                
+                setLatestValues({
+                  heartRate: newHrPoint.value,
+                  spo2: newSpo2Point.value,
+                  ecg: newEcgPoint.value,
+                  gsr: newGsrPoint.value,
+                });
               }
+            } catch (e) {
+                // This can happen if we get a partial JSON string.
+                // The loop will continue and hopefully parse a complete one next time.
+                console.warn("Could not parse JSON from serial:", jsonString, e);
+            }
+          } else {
+             // If we have a '}' but no '{' before it, the buffer is likely corrupt. Clear it.
+             buffer = buffer.substring(jsonEnd + 1);
           }
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-          console.error("Error reading from serial port:", err);
-          setError("Error reading from device. It may have been disconnected.");
-          setIsDeviceConnected(false);
-          stopMonitoring(true);
+        }
+      } catch (err: any) {
+        if (!err.message.includes('The port is closed.')) {
+           console.error("Error in read loop:", err);
+           setError("Error reading from device. It may have been disconnected.");
+           handleDisconnectDevice();
+        }
+        break; 
       }
     }
   };
-
-  const requestDataFromArduino = async () => {
-     if (!writerRef.current || !isMonitoring) {
-        return;
-    }
-     try {
-        const textEncoder = new TextEncoder();
-        await writerRef.current.write(textEncoder.encode("M"));
-        await readFromSerialPort();
-    } catch (err) {
-        console.error("Error writing to serial port:", err);
-        setError("Could not send command to device.");
-        stopMonitoring(true);
-    }
-  }
-
+  
   const handleGenerateReport = async () => {
     if (isGenerating || !hasMonitored || latestValues.heartRate === 0) {
         setError("Please run monitoring to collect some data before generating a report.");
@@ -155,18 +157,27 @@ export default function DashboardClient() {
     setIsMonitoring(true);
     setHasMonitored(false);
 
-    monitoringIntervalRef.current = setInterval(() => {
-        requestDataFromArduino();
+    monitoringIntervalRef.current = setInterval(async () => {
+       if (writerRef.current) {
+          try {
+            const textEncoder = new TextEncoder();
+            await writerRef.current.write(textEncoder.encode("M"));
+          } catch (err) {
+             console.error("Error writing to serial port:", err);
+             setError("Could not send command to device.");
+             stopMonitoring();
+          }
+       }
     }, 1000);
   };
   
-  const stopMonitoring = (force = false) => {
+  const stopMonitoring = () => {
     if (monitoringIntervalRef.current) {
         clearInterval(monitoringIntervalRef.current);
         monitoringIntervalRef.current = null;
     }
     setIsMonitoring(false);
-    if(data.heartRate.length > 0) {
+    if(latestDataRef.current.heartRate.length > 0) {
         setHasMonitored(true);
     }
   }
@@ -183,12 +194,17 @@ export default function DashboardClient() {
         setError(null);
         console.log("Device connected successfully!");
 
-        readerRef.current = port.readable.getReader();
         writerRef.current = port.writable.getWriter();
+        readerRef.current = port.readable.getReader();
+        
+        // Start the reading loop
+        readLoop();
         
       } catch (err: any) {
-        console.error("There was an error opening the serial port:", err);
-        setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
+        if (err.name !== 'NotFoundError') {
+            console.error("There was an error opening the serial port:", err);
+            setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
+        }
       }
     } else {
       console.error("The Web Serial API is not supported in this browser.");
@@ -197,7 +213,15 @@ export default function DashboardClient() {
   };
 
   const handleDisconnectDevice = async () => {
-    stopMonitoring(true);
+    stopMonitoring();
+    
+    if (readerRef.current) {
+      try {
+        await readerRef.current.cancel();
+        readerRef.current.releaseLock();
+      } catch (error) { /* Ignore */ }
+      readerRef.current = null;
+    }
     
     if (writerRef.current) {
         try {
@@ -206,23 +230,18 @@ export default function DashboardClient() {
         writerRef.current = null;
     }
 
-    if (readerRef.current) {
-        try {
-            await readerRef.current.cancel();
-            readerRef.current.releaseLock();
-        } catch (error) { /* Ignore */ }
-        readerRef.current = null;
-    }
-
     if (portRef.current) {
         try {
             await portRef.current.close();
         } catch (error) { /* Ignore */ }
         portRef.current = null;
     }
+
     setIsDeviceConnected(false);
     setIsMonitoring(false);
     setHasMonitored(false);
+    setData(initialDataState);
+    setLatestValues(initialLatestValues);
     console.log("Device disconnected.");
   };
   
@@ -265,7 +284,7 @@ export default function DashboardClient() {
                     Start Monitoring
                 </Button>
              ) : (
-                <Button onClick={() => stopMonitoring()} variant="destructive">
+                <Button onClick={stopMonitoring} variant="destructive">
                     <StopCircle className="mr-2 h-4 w-4" />
                     Stop Monitoring
                 </Button>
@@ -411,3 +430,5 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
