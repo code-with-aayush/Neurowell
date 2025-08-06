@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug } from 'lucide-react';
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -255,6 +255,11 @@ export default function DashboardClient() {
   }
 
   const isDeviceConnected = !!portRef.current;
+  
+  const chartDataBPM = [ { name: 'Normal', value: 80 }, { name: 'Live', value: latestValues.heartRate } ];
+  const chartDataSpO2 = [ { name: 'Normal', value: 97 }, { name: 'Live', value: latestValues.spo2 } ];
+  const chartDataECG = [ { name: 'Normal', value: 1.0 }, { name: 'Live', value: latestValues.ecg } ];
+  const chartDataGSR = [ { name: 'Normal', value: 5.0 }, { name: 'Live', value: latestValues.gsr } ];
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
@@ -338,23 +343,25 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring && data.heartRate.length === 0} liveValue={latestValues.heartRate} normalValue={80} dataKey="heartRate" domain={[0, 150]}/>
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring && data.spo2.length === 0} liveValue={latestValues.spo2} normalValue={97} dataKey="spo2" domain={[80, 100]} />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} liveValue={latestValues.ecg} normalValue={1.0} dataKey="ecg" domain={[0, 3.3]}/>
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} liveValue={latestValues.gsr} normalValue={5.0} dataKey="gsr" domain={[0, 20]} />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring && data.heartRate.length === 0}/>
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring && data.spo2.length === 0} />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} />
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} />
         </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title="Heart Rate (BPM)" data={chartDataBPM} dataKey="value" domain={[0, 150]} />
+            <ChartCard title="Blood Oxygen (SpO2)" data={chartDataSpO2} dataKey="value" domain={[80, 100]} />
+            <ChartCard title="ECG Signal (mV)" data={chartDataECG} dataKey="value" domain={[0, 3.3]} />
+            <ChartCard title="Stress Level (GSR)" data={chartDataGSR} dataKey="value" domain={[0, 20]} />
+        </div>
+
       </div>
     </div>
   );
 }
 
-const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading, liveValue, normalValue, dataKey, domain }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean, liveValue: number, normalValue: number, dataKey: string, domain: [number, number] }) => {
-  
-  const chartData = [
-    { name: 'Normal', [dataKey]: normalValue },
-    { name: 'Live', [dataKey]: liveValue },
-  ];
-
+const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => {
   return (
     <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
@@ -373,25 +380,36 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading, liveValue, n
             {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
           </div>
         )}
-         <div className="h-[100px] mt-4">
-          <ChartContainer config={{}} className="w-full h-full">
-            <BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} accessibilityLayer>
-                <CartesianGrid vertical={false} strokeDasharray="3 3"/>
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
-                <YAxis type="number" domain={domain} tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
-                <ChartTooltip
-                    cursor={{fill: 'hsl(var(--muted))'}}
-                    content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Bar dataKey={dataKey} radius={4}>
-                    {chartData.map((entry, index) => (
-                         <div key={`cell-${index}`} style={{ backgroundColor: entry.name === 'Live' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))' }}/>
-                    ))}
-                </Bar>
-            </BarChart>
-          </ChartContainer>
-        </div>
       </CardContent>
     </Card>
   );
 };
+
+
+const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => (
+    <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
+        <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-700">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="h-[200px] w-full">
+                <ChartContainer config={{}} className="w-full h-full">
+                    <BarChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                        <YAxis type="number" domain={domain} tick={{ fontSize: 12 }} />
+                        <Tooltip
+                            content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} >
+                           {data.map((entry, index) => (
+                                <div key={`cell-${index}`} style={{ backgroundColor: entry.name === 'Live' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))' }}/>
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ChartContainer>
+            </div>
+        </CardContent>
+    </Card>
+);
+
