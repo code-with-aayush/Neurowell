@@ -38,15 +38,16 @@ const RecommendationIcon = ({ icon, className }: { icon: string, className?: str
   }
 };
 
-// Helper function to decode Base64 string from URL
+// Helper function to decode Base64 string from URL safely
 const safelyDecodeAndParse = (str: string | null) => {
     if (!str) return null;
     try {
+        // Decode from Base64 to a UTF-8 string
         const decoded = Buffer.from(str, 'base64').toString('utf-8');
         return JSON.parse(decoded);
     } catch (e) {
-        console.error("Failed to decode or parse string:", e);
-        return null;
+        console.error("Failed to decode or parse string from URL:", e);
+        return null; // Return null if decoding or parsing fails
     }
 }
 
