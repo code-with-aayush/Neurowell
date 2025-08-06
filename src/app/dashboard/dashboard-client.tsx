@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug } from 'lucide-react';
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -403,7 +403,7 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
                         />
                         <Bar dataKey={dataKey} radius={[4, 4, 0, 0]} >
                            {data.map((entry, index) => (
-                                <div key={`cell-${index}`} style={{ backgroundColor: entry.name === 'Live' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))' }}/>
+                                <Cell key={`cell-${index}`} fill={entry.name === 'Live' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))'}/>
                             ))}
                         </Bar>
                     </BarChart>
@@ -413,3 +413,4 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
     </Card>
 );
 
+    
