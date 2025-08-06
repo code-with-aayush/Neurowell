@@ -40,7 +40,7 @@ export default function Home() {
               <span className="text-primary">Wellness & Lifestyle</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg">
-              MindSync connects your daily habits with your mental state. Our monitor provides a holistic view of your well-being by combining biometric data with lifestyle insights.
+              NeuroWell connects your daily habits with your mental state. Our monitor provides a holistic view of your well-being by combining biometric data with lifestyle insights.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">

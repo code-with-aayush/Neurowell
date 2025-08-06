@@ -38,7 +38,7 @@ export default function SignUpPage() {
        <Card className="w-full max-w-md shadow-2xl transition-all hover:shadow-primary/20">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Create an Account</CardTitle>
-          <CardDescription className="text-muted-foreground">Join Neurowell to start your wellness journey.</CardDescription>
+          <CardDescription className="text-muted-foreground">Join NeuroWell to start your wellness journey.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-6" action={formAction}>
