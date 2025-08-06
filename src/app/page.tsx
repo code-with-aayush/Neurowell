@@ -42,16 +42,9 @@ export default function Home() {
             <p className="text-lg text-muted-foreground max-w-lg">
               Advanced biometric monitoring that tracks your mental well-being in real-time, providing insights to help you maintain optimal mental health.
             </p>
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle2 className="h-5 w-5" />
-              <span>Device Connected</span>
-            </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
                 <Link href="/dashboard" onClick={handleDashboardRedirect}>Start Monitoring <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full px-8 py-6 text-base font-semibold">
-                <Link href="#">Learn More</Link>
               </Button>
             </div>
             <div className="flex items-center gap-8 pt-6">
@@ -97,7 +90,7 @@ export default function Home() {
               <h3 className="text-xl font-semibold mb-2">Wear Your Device</h3>
               <p className="text-muted-foreground">Put on your comfortable monitoring device to start tracking your vital signs.</p>
             </Card>
-            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow border-2 border-primary">
+            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
                <div className="flex items-center justify-between mb-4">
                 <Activity className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">2</div>
