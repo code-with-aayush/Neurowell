@@ -26,9 +26,22 @@ const RecommendationSchema = z.object({
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).describe('The priority of the recommendation.'),
 });
 
+const VitalSignAnalysisSchema = z.object({
+    value: z.string().describe("The formatted value of the vital sign, including units (e.g., '80 BPM')."),
+    status: z.string().describe("The status of the vital sign (e.g., 'Normal', 'Elevated', 'Low')."),
+    interpretation: z.string().describe("A brief, one-sentence interpretation of the reading.")
+});
+
 const GenerateHealthReportOutputSchema = z.object({
+  wellnessScore: z.number().describe("An overall wellness score from 0 to 100."),
   summary: z.string().describe('A summary of the overall health score and key indicators.'),
   recommendations: z.array(RecommendationSchema).describe('A list of personalized health recommendations.'),
+  vitals: z.object({
+    heartRate: VitalSignAnalysisSchema,
+    spo2: VitalSignAnalysisSchema,
+    ecg: VitalSignAnalysisSchema,
+    stress: VitalSignAnalysisSchema,
+  }).describe("A detailed breakdown and interpretation for each key vital sign.")
 });
 export type GenerateHealthReportOutput = z.infer<typeof GenerateHealthReportOutputSchema>;
 
@@ -40,7 +53,7 @@ const prompt = ai.definePrompt({
   name: 'generateHealthReportPrompt',
   input: {schema: GenerateHealthReportInputSchema},
   output: {schema: GenerateHealthReportOutputSchema},
-  prompt: `You are a health and wellness expert. Analyze the provided health data and generate a summary, an overall health score, and a list of personalized recommendations. The recommendations should have a title, description, and priority (HIGH, MEDIUM, LOW).
+  prompt: `You are a health and wellness expert. Analyze the provided health data and generate a comprehensive wellness report.
 
   User Profile: {{{userProfile}}}
   Average Heart Rate: {{{heartRate}}} BPM
@@ -48,8 +61,15 @@ const prompt = ai.definePrompt({
   Average ECG Signal: {{{ecg}}} mV
   Average Stress Level (GSR): {{{gsr}}} μS
 
-  Generate a concise summary about the user's overall health score and what it means.
-  Then, provide four distinct personalized recommendations based on the data. Ensure each recommendation includes a title, a brief description, and a priority level.`,
+  Your response must be in the specified JSON format.
+
+  1.  **Wellness Score**: Calculate an overall wellness score from 0-100 based on the provided data. A higher score indicates better health. Consider all vitals. For example, a heart rate of 75, SpO2 of 98%, ECG of 1.1mV and GSR of 4uS would be a high score. Deviations from normal ranges should lower the score.
+  2.  **Vitals Analysis**: For each of the four vitals (Heart Rate, SpO2, ECG, Stress), provide:
+      - A `value` string with the number and its unit.
+      - A `status` (e.g., "Normal", "Elevated", "Slightly Low", "High"). Normal ranges are: HR 60-100, SpO2 >95%, ECG ~1.0-1.5mV, GSR < 10uS.
+      - A concise, one-sentence `interpretation` of the reading.
+  3.  **Summary**: Generate a concise summary (2-3 sentences) about the user's overall wellness based on the score and key indicators.
+  4.  **Recommendations**: Provide four distinct, personalized recommendations. Each must include a title, a brief description, and a priority level (HIGH, MEDIUM, LOW).`,
 });
 
 const generateHealthReportFlow = ai.defineFlow(

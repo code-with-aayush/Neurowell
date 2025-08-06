@@ -30,10 +30,12 @@ export async function createReport(
       userProfile,
     });
   
+    const wellnessScore = report.wellnessScore;
     const summary = encodeURIComponent(report.summary);
-    const suggestions = encodeURIComponent(JSON.stringify(report.recommendations));
+    const recommendations = encodeURIComponent(JSON.stringify(report.recommendations));
+    const vitals = encodeURIComponent(JSON.stringify(report.vitals));
     
-    const redirectUrl = `/report?summary=${summary}&suggestions=${suggestions}&avgHr=${heartRate.toFixed(0)}&avgStress=${gsr.toFixed(1)}`;
+    const redirectUrl = `/report?wellnessScore=${wellnessScore}&summary=${summary}&recommendations=${recommendations}&vitals=${vitals}`;
     
     return {
         success: true,
