@@ -2,34 +2,23 @@
 'use server'
 
 import { generateHealthReport } from '@/ai/flows/generate-health-report'
-import { redirect } from 'next/navigation'
-
-function average(arr: { time: string, value: number }[]): number {
-  if (arr.length === 0) return 0;
-  return arr.reduce((a, b) => a + b.value, 0) / arr.length;
-}
 
 export async function createReport(
   currentState: any,
   formData: FormData
 ): Promise<{ success: boolean; message: string; redirectUrl?: string }> {
   try {
-    const heartRateData = JSON.parse(formData.get('heartRate') as string);
-    const spo2Data = JSON.parse(formData.get('spo2') as string);
-    const ecgData = JSON.parse(formData.get('ecg') as string);
-    const gsrData = JSON.parse(formData.get('gsr') as string);
+    const heartRate = parseFloat(formData.get('heartRate') as string);
+    const spo2 = parseFloat(formData.get('spo2') as string);
+    const ecg = parseFloat(formData.get('ecg') as string);
+    const gsr = parseFloat(formData.get('gsr') as string);
     
-    if (heartRateData.length === 0) {
+    if (!heartRate || !spo2 || !ecg || !gsr) {
       return {
         success: false,
-        message: 'Monitoring data is empty. Please start monitoring before generating a report.',
+        message: 'No monitoring data available to generate a report.',
       };
     }
-    
-    const heartRate = average(heartRateData);
-    const spo2 = average(spo2Data);
-    const ecg = average(ecgData);
-    const gsr = average(gsrData);
 
     const userProfile = "A 35-year-old individual interested in monitoring their general wellness and stress levels. No known chronic conditions, but experiences occasional anxiety.";
   
