@@ -77,7 +77,7 @@ const prompt = ai.definePrompt({
   **Sensor Data Interpretation Logic:**
   - **Heart Rate (BPM):** Normal resting: 60-100.
   - **SpO2 (%):** Normal: >95%.
-  - **GSR (Galvanic Skin Response, μS):** Measures emotional arousal. Normal resting: 1-10 μS.
+  - **GSR (Galvanic Skin Response, μS):** Measures emotional arousal. Normal resting: 1-10 μS. Elevated values (10-20 μS) suggest heightened arousal, which can be linked to stress. High values (>20 μS) indicate a strong stress response.
   - **ECG (mV):** Normal: ~1.0-1.5mV.
 
   ## User's Data to Analyze:
@@ -105,6 +105,7 @@ const prompt = ai.definePrompt({
   5.  **Vitals Analysis**: For each of the four vitals, provide:
       - A 'value' string with the number and its unit.
       - A 'status' string (e.g., "Normal", "Elevated", "Slightly Low", "High").
+      - **For the 'stress' vital specifically:** Determine its status by combining the GSR value with the answers for "feeling overwhelmed" (q3) and "time to relax" (q6). If GSR is elevated and q3/q6 scores are high (2 or 3), the status should be "High" or "Elevated". If GSR is normal but q3/q6 scores are high, the status could be "Moderate" reflecting mental stress not yet fully manifesting physically.
   6.  **Recommendations**: Provide exactly four distinct, personalized recommendations. Each must include a title, a short description (max 15 words), and a relevant icon ('sleep', 'mindfulness', 'activity', 'caffeine'). These recommendations MUST be based on the combined analysis, targeting the highest-risk areas identified. The first recommendation in the array should be the most impactful and serve as the "Mental Boost Tip".`,
 });
 
