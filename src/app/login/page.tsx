@@ -68,7 +68,7 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-16">
         <div className="hidden md:flex justify-center">
             <Image 
-                src="https://placehold.co/400x500.png"
+                src="/auth_page.png"
                 alt="Illustration of a person in a calm state"
                 width={400}
                 height={500}
