@@ -9,22 +9,20 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const statusColors = {
-  Good: 'text-green-600',
-  Moderate: 'text-yellow-600',
-  'Needs Attention': 'text-red-600',
+  Good: 'text-green-600 bg-green-100',
+  Moderate: 'text-yellow-600 bg-yellow-100',
+  'Needs Attention': 'text-red-600 bg-red-100',
   Low: 'text-green-600',
   High: 'text-red-600',
   Normal: 'bg-green-100 text-green-800',
   Elevated: 'bg-yellow-100 text-yellow-800',
-  Like: 'bg-blue-100 text-blue-800',
+  'Slightly Low': 'bg-blue-100 text-blue-800',
   default: 'bg-gray-100 text-gray-800',
 };
 
-const getStatusColor = (status: string, type: 'text' | 'bg' = 'bg') => {
+const getStatusColorClass = (status?: string) => {
+    if (!status) return statusColors.default;
     const s = status as keyof typeof statusColors;
-    if(type === 'text') {
-        return statusColors[s] || 'text-gray-600';
-    }
     return statusColors[s] || statusColors.default;
 };
 
@@ -40,6 +38,17 @@ const RecommendationIcon = ({ icon, className }: { icon: string, className?: str
   }
 };
 
+// Helper function to decode Base64 string from URL
+const safelyDecodeAndParse = (str: string | null) => {
+    if (!str) return null;
+    try {
+        const decoded = Buffer.from(str, 'base64').toString('utf-8');
+        return JSON.parse(decoded);
+    } catch (e) {
+        console.error("Failed to decode or parse string:", e);
+        return null;
+    }
+}
 
 function ReportContent() {
   const searchParams = useSearchParams();
@@ -51,8 +60,8 @@ function ReportContent() {
   const wellnessScoreStr = searchParams.get('wellnessScore');
   const wellnessStatus = searchParams.get('wellnessStatus') || 'Moderate';
   
-  const recommendations = recommendationsStr ? JSON.parse(decodeURIComponent(recommendationsStr)) : [];
-  const vitals = vitalsStr ? JSON.parse(decodeURIComponent(vitalsStr)) : {};
+  const recommendations = safelyDecodeAndParse(recommendationsStr) || [];
+  const vitals = safelyDecodeAndParse(vitalsStr) || {};
   const wellnessScore = wellnessScoreStr ? parseInt(wellnessScoreStr, 10) : 76;
   
   const { heartRate, spo2, ecg, stress } = vitals;
@@ -107,7 +116,7 @@ function ReportContent() {
                                     <p className="text-5xl font-bold text-gray-800">{wellnessScore}</p>
                                 </div>
                             </div>
-                            <span className={`mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${getStatusColor(wellnessStatus, 'bg')}`}>{wellnessStatus}</span>
+                            <span className={`mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${getStatusColorClass(wellnessStatus)}`}>{wellnessStatus}</span>
                             <div className="text-gray-600 mt-4 text-center space-y-1">
                                 <p>{physiologicalSummary}</p>
                                 <p>{mentalHealthSummary}</p>
@@ -120,9 +129,13 @@ function ReportContent() {
                                 AI-Based Suggestion Box
                             </CardTitle>
                             <div className="space-y-4">
-                                {suggestionBoxTips.map((tip: any, index: number) => (
-                                    <RecommendationItem key={index} {...tip} />
-                                ))}
+                                {suggestionBoxTips && suggestionBoxTips.length > 0 ? (
+                                    suggestionBoxTips.map((tip: any, index: number) => (
+                                        <RecommendationItem key={index} {...tip} />
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-gray-600">No immediate suggestions. Keep up the good work!</p>
+                                )}
                             </div>
                         </Card>
                     </CardContent>
@@ -136,7 +149,7 @@ function ReportContent() {
                         <PhysiologicalStat title="Heart Rate" data={heartRate} />
                         <PhysiologicalStat title="SpO2" data={spo2} />
                         <PhysiologicalStat title="ECG Signal" data={ecg} />
-                        <PhysiologicalStat title="Stress Level" data={stress} />
+                        <PhysiologicalStat title="Stress Level (GSR)" data={stress} />
                     </CardContent>
                 </Card>
             </div>
@@ -164,7 +177,7 @@ function ReportContent() {
                         <CardDescription>Actionable steps to improve your well-being.</CardDescription>
                     </CardHeader>
                    <CardContent>
-                        {remainingRecommendations.length > 0 ? (
+                        {remainingRecommendations && remainingRecommendations.length > 0 ? (
                            <div className="space-y-5">
                                {remainingRecommendations.map((rec: any, index: number) => (
                                    <RecommendationItem key={index} {...rec} />
@@ -197,7 +210,7 @@ const PhysiologicalStat = ({ title, data }: { title: string, data?: { value: str
                 <p className="text-sm text-gray-500">{title}</p>
                 <p className="text-2xl font-bold text-gray-800">{data.value}</p>
             </div>
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusColor(data.status)}`}>{data.status}</span>
+            <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusColorClass(data.status)}`}>{data.status}</span>
         </div>
     )
 }

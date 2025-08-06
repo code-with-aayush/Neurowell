@@ -43,8 +43,10 @@ export async function createReportWithQuestions(
     params.set('wellnessStatus', report.wellnessStatus);
     params.set('physiologicalSummary', report.physiologicalSummary);
     params.set('mentalHealthSummary', report.mentalHealthSummary);
-    params.set('recommendations', JSON.stringify(report.recommendations));
-    params.set('vitals', JSON.stringify(report.vitals));
+    
+    // Encode complex objects to Base64 to safely pass them in the URL
+    params.set('recommendations', Buffer.from(JSON.stringify(report.recommendations)).toString('base64'));
+    params.set('vitals', Buffer.from(JSON.stringify(report.vitals)).toString('base64'));
 
     const redirectUrl = `/report?${params.toString()}`;
     
