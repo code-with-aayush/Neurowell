@@ -21,10 +21,6 @@ export async function createReportWithQuestions(
         q4: parseInt(formData.get('q4') as string, 10),
         q5: parseInt(formData.get('q5') as string, 10),
         q6: parseInt(formData.get('q6') as string, 10),
-        q7: parseInt(formData.get('q7') as string, 10),
-        q8: parseInt(formData.get('q8') as string, 10),
-        q9: parseInt(formData.get('q9') as string, 10),
-        q10: parseInt(formData.get('q10') as string, 10),
     }
 
     if (!heartRate || !spo2 || !ecg || !gsr || Object.values(answers).some(v => isNaN(v))) {

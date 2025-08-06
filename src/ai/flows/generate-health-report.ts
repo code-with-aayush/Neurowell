@@ -17,16 +17,12 @@ const GenerateHealthReportInputSchema = z.object({
   spo2: z.number().describe('Average SpO2 (blood oxygen saturation) value (%).'),
   ecg: z.number().describe('Average ECG (electrocardiogram) value (mV).'),
   gsr: z.number().describe('Average GSR (galvanic skin response) value (μS), representing stress.'),
-  q1: z.number().describe('Score (0-3) for "nervous, anxious, or on edge"'),
-  q2: z.number().describe('Score (0-3) for "trouble relaxing"'),
-  q3: z.number().describe('Score (0-3) for "sad or hopeless"'),
-  q4: z.number().describe('Score (0-3) for "lost interest or pleasure"'),
-  q5: z.number().describe('Score (0-3) for "difficulty concentrating"'),
-  q6: z.number().describe('Score (0-3) for "sudden panic or dread"'),
-  q7: z.number().describe('Score (0-3) for "tired or no energy"'),
-  q8: z.number().describe('Score (0-3) for "feeling worthless or guilty"'),
-  q9: z.number().describe('Score (0-3) for "irritable or easily annoyed"'),
-  q10: z.number().describe('Score (0-3) for "trouble sleeping"'),
+  q1: z.number().describe('Score (0-3) for "tired or lacking energy"'),
+  q2: z.number().describe('Score for "quality sleep" (0=6-8hrs, 1=>8hrs, 2=4-6hrs, 3=<4hrs)'),
+  q3: z.number().describe('Score (0-3) for "feeling overwhelmed"'),
+  q4: z.number().describe('Score (0-3) for "consumed caffeine more than usual"'),
+  q5: z.number().describe('Score (0-3) for "mentally present and focused"'),
+  q6: z.number().describe('Score (0-3) for "had time to relax"'),
 });
 export type GenerateHealthReportInput = z.infer<typeof GenerateHealthReportInputSchema>;
 
@@ -63,7 +59,7 @@ const prompt = ai.definePrompt({
   name: 'generateHealthReportPrompt',
   input: {schema: GenerateHealthReportInputSchema},
   output: {schema: GenerateHealthReportOutputSchema},
-  prompt: `You are a mental health and wellness expert. Your task is to analyze biometric sensor data alongside answers from a psychological screening questionnaire to generate a comprehensive wellness report. Your primary goal is to identify potential risk factors and offer preventative advice, NOT to diagnose a current emotional state.
+  prompt: `You are a mental health and wellness expert. Your task is to analyze biometric sensor data alongside answers from a lifestyle questionnaire to generate a comprehensive wellness report. Your primary goal is to identify potential risk factors and offer preventative advice, NOT to diagnose a current emotional state.
 
   ## Core Principle:
   Your analysis must distinguish between objective physical data (sensors) and subjective behavioral data (questionnaire). A user can have normal vitals but be at high risk due to poor lifestyle habits. Your language must reflect this nuance. Avoid definitive statements like "You are stressed." Instead, use phrases like "Your habits suggest a risk of..." or "Your body's signals are calm, but..."
@@ -77,8 +73,8 @@ const prompt = ai.definePrompt({
   - **ECG (mV):** Provides context on cardiac electrical activity. Normal: ~1.0-1.5mV.
 
   **Wellness States Logic (Risk Profiles):**
-  - **Healthy State:** Normal, stable vitals and low scores on the questionnaire (mostly 0s and 1s).
-  - **At Risk / Needs Attention:** Vitals may be normal, but questionnaire answers indicate risk factors (e.g., poor sleep, anxiety, sadness). This is a key state to identify.
+  - **Healthy State:** Normal, stable vitals and low scores on the questionnaire.
+  - **At Risk / Needs Attention:** Vitals may be normal, but questionnaire answers indicate risk factors (e.g., poor sleep, high caffeine). This is a key state to identify.
   - **Immediate Concern:** Vitals are abnormal (e.g., high HR, high GSR) AND questionnaire scores are high.
 
   ## User's Data to Analyze:
@@ -89,17 +85,13 @@ const prompt = ai.definePrompt({
   - Average ECG Signal: {{{ecg}}} mV
   - Average Stress Level (GSR): {{{gsr}}} μS
 
-  **Questionnaire Scores (0=Not at all, 3=Nearly every day):**
-  - Nervous/Anxious: {{{q1}}}
-  - Trouble Relaxing: {{{q2}}}
-  - Sad/Hopeless: {{{q3}}}
-  - Lost Interest: {{{q4}}}
-  - Trouble Concentrating: {{{q5}}}
-  - Panic/Dread: {{{q6}}}
-  - Tired/No Energy: {{{q7}}}
-  - Feeling Worthless: {{{q8}}}
-  - Irritable: {{{q9}}}
-  - Trouble Sleeping: {{{q10}}}
+  **Questionnaire Scores:**
+  - Lacking energy (0-3): {{{q1}}}
+  - Quality sleep (0=6-8hrs, 1=>8hrs, 2=4-6hrs, 3=<4hrs): {{{q2}}}
+  - Feeling overwhelmed (0-3): {{{q3}}}
+  - High caffeine use (0-3): {{{q4}}}
+  - Lacking focus (0-3): {{{q5}}}
+  - No time to relax (0-3): {{{q6}}}
 
   ## Your Task: Generate the Report in JSON Format
 
