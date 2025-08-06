@@ -54,6 +54,7 @@ export default function DashboardClient() {
     let buffer = '';
 
     try {
+      // This is a simplified reader. A more robust implementation would handle streaming data chunks.
       const { value, done } = await readerRef.current.read();
       if (done) return;
       
@@ -366,7 +367,7 @@ export default function DashboardClient() {
                 </div>
               )}
                <div className="flex items-center gap-2 text-gray-600 bg-gray-200 px-3 py-1 rounded-full text-sm font-medium">
-                <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-500'}`} />
+                <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
                 <span>{isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}</span>
               </div>
             </div>
@@ -458,5 +459,3 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
-
-    
