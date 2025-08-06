@@ -135,14 +135,28 @@ export default function DashboardClient() {
     setIsGenerating(true); 
    
     const processData = (dataPoints: DataPoint[]) => {
-      if (dataPoints.length <= 4) return dataPoints;
-      return dataPoints.slice(4); // Discard first 4 readings
+      // Filter out any readings where the value is 0
+      const validData = dataPoints.filter(p => p.value > 0);
+      
+      // Check if we have enough valid data after filtering
+      if (validData.length <= 4) {
+          return []; // Return empty if not enough valid data
+      }
+      return validData.slice(4); // Discard first 4 valid readings
     }
 
     const finalHrData = processData(allCollectedData.current.heartRate);
     const finalSpo2Data = processData(allCollectedData.current.spo2);
     const finalEcgData = processData(allCollectedData.current.ecg);
     const finalGsrData = processData(allCollectedData.current.gsr);
+    
+    if (finalHrData.length === 0 || finalSpo2Data.length === 0 || finalEcgData.length === 0 || finalGsrData.length === 0) {
+        setError("Could not collect enough valid data from the device. Please check sensor placement and try again.");
+        setIsGenerating(false);
+        stopMonitoring(); // Ensure monitoring status is reset
+        setMonitoringStatus('Monitoring failed. Please try again.');
+        return;
+    }
 
     const average = (arr: DataPoint[]) => arr.length > 0 ? arr.reduce((acc, p) => acc + p.value, 0) / arr.length : 0;
     
@@ -444,3 +458,5 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
