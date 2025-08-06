@@ -47,9 +47,9 @@ const MentalHealthInsightSchema = z.object({
 const GenerateHealthReportOutputSchema = z.object({
   wellnessScore: z.number().min(0).max(100).describe("An overall wellness score from 0 to 100. A lower score indicates a higher risk profile. Calculated by weighing sensor data against questionnaire answers."),
   wellnessStatus: z.enum(['Good', 'Moderate', 'Needs Attention']).describe("A single-word status for the wellness score."),
-  physiologicalSummary: z.string().describe("A one-sentence summary of the user's physiological state based on the sensor data only."),
-  mentalHealthInsights: MentalHealthInsightSchema.describe("A breakdown of specific mental health metrics derived from the questionnaire."),
-  recommendations: z.array(RecommendationSchema).describe('A list of 4 personalized health recommendations based on all available data.'),
+  physiologicalSummary: z.string().describe("A one-sentence summary of the user's physiological state based on the sensor data only. Example: 'Your key physiological signs are within normal ranges.'"),
+  mentalHealthSummary: z.string().describe("A one-sentence summary of the user's mental/lifestyle state based on the questionnaire. Example: 'However, your lifestyle habits indicate a high risk of burnout.'"),
+  recommendations: z.array(RecommendationSchema).min(4).max(4).describe('A list of exactly 4 personalized health recommendations based on all available data. The first recommendation should always be the single most important "Mental Boost Tip".'),
   vitals: z.object({
     heartRate: VitalSignAnalysisSchema,
     spo2: VitalSignAnalysisSchema,
@@ -70,7 +70,7 @@ const prompt = ai.definePrompt({
   prompt: `You are a mental health and wellness expert. Your task is to analyze biometric sensor data alongside answers from a lifestyle questionnaire to generate a comprehensive wellness report. Your primary goal is to identify potential risk factors and offer preventative advice, NOT to diagnose a current emotional state.
 
   ## Core Principle:
-  Your analysis must distinguish between objective physical data (sensors) and subjective behavioral data (questionnaire). A user can have normal vitals but be at high risk due to poor lifestyle habits. Your language must reflect this nuance. Avoid definitive statements like "You are stressed." Instead, use phrases like "Your habits suggest a risk of..." or "Your body's signals are calm, but..."
+  Your analysis must distinguish between objective physical data (sensors) and subjective behavioral data (questionnaire). A user can have normal vitals but be at high risk due to poor lifestyle habits. Your language must reflect this nuance. Avoid definitive statements like "You are stressed." Instead, use phrases like "Your habits suggest a risk of..." or "Your body's signals are calm, but..." Your tone should be supportive and educational.
 
   ## Reference Data for Analysis:
 
@@ -100,15 +100,12 @@ const prompt = ai.definePrompt({
 
   1.  **Wellness Score**: Calculate an overall wellness score from 0-100. A lower score means a higher risk profile. The score should heavily factor in the questionnaire. Normal vitals with high-risk answers should result in a score around 50-65.
   2.  **Wellness Status**: Based on the score, determine a status: >80 is 'Good', 50-80 is 'Moderate', <50 is 'Needs Attention'.
-  3.  **Physiological Summary**: Write a one-sentence summary about the sensor data. Example: "Your key physiological signs are within normal ranges."
-  4.  **Vitals Analysis**: For each of the four vitals, provide:
+  3.  **Physiological Summary**: Write a one-sentence summary about the sensor data only.
+  4.  **Mental Health Summary**: Write a one-sentence summary about the lifestyle/questionnaire data.
+  5.  **Vitals Analysis**: For each of the four vitals, provide:
       - A 'value' string with the number and its unit.
       - A 'status' string (e.g., "Normal", "Elevated", "Slightly Low", "High").
-  5.  **Mental Health Insights**: Based on the questionnaire, determine the values for:
-      - **fatigueProbability**: ('Low', 'Moderate', 'High') based on Q1 & Q2.
-      - **mindfulnessScore**: ('Low', 'Moderate', 'High') based on Q5 & Q6.
-      - **riskOfBurnout**: ('Low', 'Moderate', 'High') based on Q3 & Q6.
-  6.  **Recommendations**: Provide exactly four distinct, personalized recommendations. Each must include a title, a short description (max 15 words), and a relevant icon ('sleep', 'mindfulness', 'activity', 'caffeine'). These recommendations MUST be based on the combined analysis, targeting the highest-risk areas identified.`,
+  6.  **Recommendations**: Provide exactly four distinct, personalized recommendations. Each must include a title, a short description (max 15 words), and a relevant icon ('sleep', 'mindfulness', 'activity', 'caffeine'). These recommendations MUST be based on the combined analysis, targeting the highest-risk areas identified. The first recommendation in the array should be the most impactful and serve as the "Mental Boost Tip".`,
 });
 
 const generateHealthReportFlow = ai.defineFlow(

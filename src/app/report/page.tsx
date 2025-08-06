@@ -2,14 +2,11 @@
 'use client'
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Download, Heart, Zap, Activity, Droplets, Moon, Brain, Coffee, Footprints } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, Download, Heart, Zap, Activity, Droplets, Moon, Brain, Coffee, Footprints, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-
 
 const statusColors = {
   Good: 'text-green-600',
@@ -48,27 +45,21 @@ function ReportContent() {
   const searchParams = useSearchParams();
 
   const physiologicalSummary = searchParams.get('physiologicalSummary') || 'No summary available.';
+  const mentalHealthSummary = searchParams.get('mentalHealthSummary') || 'No insights available.';
   const recommendationsStr = searchParams.get('recommendations');
   const vitalsStr = searchParams.get('vitals');
   const wellnessScoreStr = searchParams.get('wellnessScore');
   const wellnessStatus = searchParams.get('wellnessStatus') || 'Moderate';
-  const mentalHealthInsightsStr = searchParams.get('mentalHealthInsights');
   
-  const recommendations = recommendationsStr ? JSON.parse(recommendationsStr) : [];
-  const vitals = vitalsStr ? JSON.parse(vitalsStr) : {};
-  const mentalHealthInsights = mentalHealthInsightsStr ? JSON.parse(mentalHealthInsightsStr) : {};
+  const recommendations = recommendationsStr ? JSON.parse(decodeURIComponent(recommendationsStr)) : [];
+  const vitals = vitalsStr ? JSON.parse(decodeURIComponent(vitalsStr)) : {};
   const wellnessScore = wellnessScoreStr ? parseInt(wellnessScoreStr, 10) : 76;
   
   const { heartRate, spo2, ecg, stress } = vitals;
-  const { fatigueProbability, mindfulnessScore, riskOfBurnout } = mentalHealthInsights;
   
-  const stressChartData = [
-    { time: "6 AM", value: 2 },
-    { time: "10 AM", value: 3 },
-    { time: "12 PM", value: 2.5 },
-    { time: "4 PM", value: 4 },
-    { time: "8 PM", value: 3.5 },
-  ];
+  const mentalBoostTip = recommendations?.[0];
+  const suggestionBoxTips = recommendations?.slice(0, 2);
+  const remainingRecommendations = recommendations?.slice(1);
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-4 sm:p-6 md:p-8">
@@ -98,8 +89,8 @@ function ReportContent() {
                                 <svg className="absolute inset-0" viewBox="0 0 100 100">
                                     <defs>
                                         <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="#8A2BE2" />
-                                            <stop offset="100%" stopColor="#32CD32" />
+                                            <stop offset="0%" stopColor="#D0BFFF" />
+                                            <stop offset="100%" stopColor="#B3E283" />
                                         </linearGradient>
                                     </defs>
                                     <circle cx="50" cy="50" r="45" stroke="#E5E7EB" strokeWidth="10" fill="none" />
@@ -117,25 +108,23 @@ function ReportContent() {
                                 </div>
                             </div>
                             <span className={`mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${getStatusColor(wellnessStatus, 'bg')}`}>{wellnessStatus}</span>
-                            <p className="text-gray-600 mt-4 text-center">{physiologicalSummary}</p>
+                            <div className="text-gray-600 mt-4 text-center space-y-1">
+                                <p>{physiologicalSummary}</p>
+                                <p>{mentalHealthSummary}</p>
+                            </div>
                         </div>
-                        <div className="h-64">
-                             <h3 className="text-lg font-semibold text-gray-700 mb-4 text-center">Daily Stress Trend</h3>
-                             <ChartContainer config={{}} className="w-full h-full">
-                                <AreaChart data={stressChartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                                    <defs>
-                                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
-                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="time" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                    <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#chartGradient)" strokeWidth={2} />
-                                </AreaChart>
-                            </ChartContainer>
-                        </div>
+                        
+                        <Card className="bg-primary/10 border-primary/20 p-6 rounded-lg">
+                            <CardTitle className="text-lg font-semibold text-primary-foreground/80 mb-4 flex items-center gap-2">
+                                <Lightbulb />
+                                AI-Based Suggestion Box
+                            </CardTitle>
+                            <div className="space-y-4">
+                                {suggestionBoxTips.map((tip: any, index: number) => (
+                                    <RecommendationItem key={index} {...tip} />
+                                ))}
+                            </div>
+                        </Card>
                     </CardContent>
                 </Card>
 
@@ -144,39 +133,45 @@ function ReportContent() {
                         <CardTitle className="text-xl font-bold text-gray-800">Physiological Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-                        <PhysiologicalStat title="Heart Rate" icon={Heart} data={heartRate} />
-                        <PhysiologicalStat title="SpO2" icon={Droplets} data={spo2} />
-                        <PhysiologicalStat title="ECG Signal" icon={Activity} data={ecg} />
-                        <PhysiologicalStat title="Stress Level" icon={Zap} data={stress} />
+                        <PhysiologicalStat title="Heart Rate" data={heartRate} />
+                        <PhysiologicalStat title="SpO2" data={spo2} />
+                        <PhysiologicalStat title="ECG Signal" data={ecg} />
+                        <PhysiologicalStat title="Stress Level" data={stress} />
                     </CardContent>
                 </Card>
             </div>
 
             {/* Right Column */}
             <div className="lg:col-span-2 space-y-8">
+                {mentalBoostTip && (
                 <Card className="bg-white shadow-md rounded-xl">
                    <CardHeader>
-                        <CardTitle className="text-xl font-bold text-gray-800">Mental Health Insights</CardTitle>
+                        <CardTitle className="text-xl font-bold text-gray-800">Today’s Mental Boost Tip</CardTitle>
                     </CardHeader>
-                   <CardContent className="space-y-4">
-                        <InsightItem label="Fatigue Probability" value={fatigueProbability} />
-                        <InsightItem label="Mindfulness Score" value={mindfulnessScore} />
-                        <InsightItem label="Risk of Burnout" value={riskOfBurnout} />
+                   <CardContent>
+                        <RecommendationItem 
+                            icon={mentalBoostTip.icon}
+                            title={mentalBoostTip.title}
+                            description={mentalBoostTip.description}
+                        />
                    </CardContent>
                 </Card>
+                )}
+                
                 <Card className="bg-white shadow-md rounded-xl">
                    <CardHeader>
                         <CardTitle className="text-xl font-bold text-gray-800">Recommendations</CardTitle>
+                        <CardDescription>Actionable steps to improve your well-being.</CardDescription>
                     </CardHeader>
                    <CardContent>
-                        {recommendations.length > 0 ? (
+                        {remainingRecommendations.length > 0 ? (
                            <div className="space-y-5">
-                               {recommendations.map((rec: any, index: number) => (
-                                   <RecommendationItem key={index} title={rec.title} description={rec.description} icon={rec.icon} />
+                               {remainingRecommendations.map((rec: any, index: number) => (
+                                   <RecommendationItem key={index} {...rec} />
                                ))}
                            </div>
                         ) : (
-                            <p className="text-gray-500">No recommendations were generated for this report.</p>
+                            <p className="text-gray-500">No further recommendations for today.</p>
                         )}
                    </CardContent>
                </Card>
@@ -194,7 +189,7 @@ function ReportContent() {
   );
 }
 
-const PhysiologicalStat = ({ title, data }: { title: string, icon: any, data?: { value: string, status: string }}) => {
+const PhysiologicalStat = ({ title, data }: { title: string, data?: { value: string, status: string }}) => {
     if (!data) return null;
     return (
         <div className="flex justify-between items-center py-2 border-b">
@@ -203,16 +198,6 @@ const PhysiologicalStat = ({ title, data }: { title: string, icon: any, data?: {
                 <p className="text-2xl font-bold text-gray-800">{data.value}</p>
             </div>
             <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusColor(data.status)}`}>{data.status}</span>
-        </div>
-    )
-}
-
-const InsightItem = ({ label, value }: { label: string, value: string }) => {
-    if(!value) return null;
-    return (
-        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-            <p className="font-semibold text-gray-700">{label}</p>
-            <span className={`text-sm font-medium px-4 py-1 rounded-full ${getStatusColor(value, 'bg')}`}>{value}</span>
         </div>
     )
 }

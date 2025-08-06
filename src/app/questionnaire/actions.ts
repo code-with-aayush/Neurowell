@@ -38,12 +38,15 @@ export async function createReportWithQuestions(
       ...answers
     });
   
-    const wellnessScore = report.wellnessScore;
-    const summary = encodeURIComponent(report.summary);
-    const recommendations = encodeURIComponent(JSON.stringify(report.recommendations));
-    const vitals = encodeURIComponent(JSON.stringify(report.vitals));
-    
-    const redirectUrl = `/report?wellnessScore=${wellnessScore}&summary=${summary}&recommendations=${recommendations}&vitals=${vitals}`;
+    const params = new URLSearchParams();
+    params.set('wellnessScore', report.wellnessScore.toString());
+    params.set('wellnessStatus', report.wellnessStatus);
+    params.set('physiologicalSummary', report.physiologicalSummary);
+    params.set('mentalHealthSummary', report.mentalHealthSummary);
+    params.set('recommendations', JSON.stringify(report.recommendations));
+    params.set('vitals', JSON.stringify(report.vitals));
+
+    const redirectUrl = `/report?${params.toString()}`;
     
     return {
         success: true,
