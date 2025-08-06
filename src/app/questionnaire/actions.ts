@@ -13,30 +13,33 @@ export async function createReportWithQuestions(
     const spo2 = parseFloat(formData.get('spo2') as string);
     const ecg = parseFloat(formData.get('ecg') as string);
     const gsr = parseFloat(formData.get('gsr') as string);
-    const sleepHours = parseFloat(formData.get('sleepHours') as string);
-    const mood = formData.get('mood') as string;
-    const stressLevel = formData.get('stressLevel') as string;
-    const diet = formData.get('diet') as string;
     
-    if (!heartRate || !spo2 || !ecg || !gsr || !sleepHours || !mood || !stressLevel || !diet) {
+    const answers = {
+        q1: parseInt(formData.get('q1') as string, 10),
+        q2: parseInt(formData.get('q2') as string, 10),
+        q3: parseInt(formData.get('q3') as string, 10),
+        q4: parseInt(formData.get('q4') as string, 10),
+        q5: parseInt(formData.get('q5') as string, 10),
+        q6: parseInt(formData.get('q6') as string, 10),
+        q7: parseInt(formData.get('q7') as string, 10),
+        q8: parseInt(formData.get('q8') as string, 10),
+        q9: parseInt(formData.get('q9') as string, 10),
+        q10: parseInt(formData.get('q10') as string, 10),
+    }
+
+    if (!heartRate || !spo2 || !ecg || !gsr || Object.values(answers).some(v => isNaN(v))) {
       return {
         success: false,
         message: 'Missing required fields to generate a report.',
       };
     }
-
-    const userProfile = "A 35-year-old individual interested in monitoring their general wellness and stress levels. No known chronic conditions, but experiences occasional anxiety.";
   
     const report = await generateHealthReport({
       heartRate,
       spo2,
       ecg,
       gsr,
-      userProfile,
-      sleepHours,
-      mood,
-      stressLevel,
-      diet,
+      ...answers
     });
   
     const wellnessScore = report.wellnessScore;
@@ -67,5 +70,3 @@ export async function createReportWithQuestions(
     };
   }
 }
-
-    
