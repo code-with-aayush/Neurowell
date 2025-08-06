@@ -23,8 +23,8 @@
     --muted: 210 20% 94%;
     --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 90 60% 73%; /* #B3E283 */
-    --accent-foreground: 90 25% 20%;
+    --accent: 259 100% 94%; /* A lighter version of primary */
+    --accent-foreground: 259 25% 25%;
  
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -55,8 +55,8 @@
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 90 60% 73%;
-    --accent-foreground: 90 25% 20%;
+    --accent: 259 100% 10%;
+    --accent-foreground: 210 20% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -75,3 +75,4 @@
     @apply bg-background text-foreground;
   }
 }
+
