@@ -176,11 +176,31 @@ export default function DashboardClient() {
     }
   };
 
-  const startMonitoring = () => {
-    if (!isDeviceConnected) {
-        setError("Cannot start monitoring. Device is not connected.");
+  const startMonitoring = async () => {
+    // Simplified: Automatically try to connect on start
+    if (!portRef.current) {
+      if ('serial' in navigator) {
+        try {
+          // @ts-ignore
+          const port = await navigator.serial.requestPort();
+          await port.open({ baudRate: 9600 });
+          portRef.current = port;
+          setIsDeviceConnected(true);
+          writerRef.current = port.writable.getWriter();
+          readerRef.current = port.readable.getReader();
+          readLoop();
+        } catch (err: any) {
+          if (err.name !== 'NotFoundError') {
+            setError("Failed to connect to the device. Please ensure it's plugged in and try again.");
+          }
+          return;
+        }
+      } else {
+        setError("This browser does not support the Web Serial API. Please use Chrome or Edge.");
         return;
+      }
     }
+
     setData(initialDataState);
     setError(null);
     setIsMonitoring(true);
@@ -199,38 +219,11 @@ export default function DashboardClient() {
        }
     }, 1000);
   };
-
-  const handleConnectDevice = async () => {
-    if ('serial' in navigator) {
-      try {
-        // @ts-ignore
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
-        portRef.current = port;
-        
-        setIsDeviceConnected(true);
-        setError(null);
-        console.log("Device connected successfully!");
-
-        writerRef.current = port.writable.getWriter();
-        readerRef.current = port.readable.getReader();
-        
-        readLoop();
-        
-      } catch (err: any) {
-        if (err.name !== 'NotFoundError') {
-            console.error("There was an error opening the serial port:", err);
-            setError("Failed to connect to the device. Please make sure it's plugged in and try again.");
-        }
-      }
-    } else {
-      console.error("The Web Serial API is not supported in this browser.");
-      setError("This browser does not support the Web Serial API. Please try Chrome or Edge.");
-    }
-  };
-
+  
   const handleDisconnectDevice = async () => {
-    stopMonitoring();
+    if (isMonitoring) {
+      stopMonitoring();
+    }
     
     if (readerRef.current) {
       try {
@@ -255,11 +248,9 @@ export default function DashboardClient() {
     }
 
     setIsDeviceConnected(false);
-    setIsMonitoring(false);
-    setData(initialDataState);
-    setLatestValues(initialLatestValues);
     console.log("Device disconnected.");
   };
+
   
   const chartConfig = {
     value: {
@@ -296,19 +287,8 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-            {!isDeviceConnected ? (
-              <Button onClick={handleConnectDevice}>
-                <Plug className="mr-2 h-4 w-4" />
-                Connect Device
-              </Button>
-            ) : (
-              <Button onClick={handleDisconnectDevice} variant="outline">
-                <Plug className="mr-2 h-4 w-4" />
-                Disconnect Device
-              </Button>
-            )}
              {!isMonitoring ? (
-                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
+                <Button onClick={startMonitoring}>
                     <Play className="mr-2 h-4 w-4" />
                     Start Monitoring
                 </Button>
@@ -316,6 +296,12 @@ export default function DashboardClient() {
                 <Button onClick={stopMonitoring} variant="destructive">
                     <StopCircle className="mr-2 h-4 w-4" />
                     Stop Monitoring
+                </Button>
+             )}
+              {isDeviceConnected && (
+                <Button onClick={handleDisconnectDevice} variant="outline">
+                    <Plug className="mr-2 h-4 w-4" />
+                    Disconnect Device
                 </Button>
              )}
           </div>
@@ -367,42 +353,62 @@ export default function DashboardClient() {
           <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} />
           <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} />
         </div>
-
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <ChartCard title="ECG Waveform" isPaused={!isMonitoring && data.ecg.length > 0}>
+           <ChartCard title="Heart Rate (BPM)" isPaused={!isMonitoring && data.heartRate.length > 0}>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
-               <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
+               <AreaChart data={data.heartRate} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                 <YAxis domain={[0, 3.3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                 <YAxis domain={[50, 120]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                  <defs>
-                    <linearGradient id="colorEcg" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                 <Area type="monotone" dataKey="value" stroke="hsl(var(--destructive))" fill="url(#colorHr)" strokeWidth={2} dot={false} />
+               </AreaChart>
+             </ChartContainer>
+          </ChartCard>
+          <ChartCard title="Blood Oxygen (SpO2)" isPaused={!isMonitoring && data.spo2.length > 0}>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <AreaChart data={data.spo2} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[90, 100]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+                  <defs>
+                    <linearGradient id="colorSpo2" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                 <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#colorEcg)" strokeWidth={2} dot={false} />
-               </AreaChart>
-             </ChartContainer>
-          </ChartCard>
-          <ChartCard title="GSR (Stress Level)" isPaused={!isMonitoring && data.gsr.length > 0}>
-              <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <AreaChart data={data.gsr} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                  <defs>
-                    <linearGradient id="colorGsr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="hsl(var(--accent))" fill="url(#colorGsr)" strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#colorSpo2)" strokeWidth={2} dot={false} />
                 </AreaChart>
               </ChartContainer>
            </ChartCard>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+            <ChartCard title="ECG Waveform" isPaused={!isMonitoring && data.ecg.length > 0}>
+                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 3.3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+                    <defs>
+                        <linearGradient id="colorEcg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="value" stroke="hsl(var(--accent))" fill="url(#colorEcg)" strokeWidth={2} dot={false} />
+                </AreaChart>
+                </ChartContainer>
+            </ChartCard>
         </div>
 
       </div>
@@ -446,3 +452,5 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
