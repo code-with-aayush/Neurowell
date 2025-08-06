@@ -8,6 +8,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
@@ -35,9 +36,20 @@ export default function Header() {
     { href: '/dashboard', label: 'Dashboard', icon: LineChart },
     { href: '/report', label: 'Report', icon: FileText },
   ];
+  
+  const AuthNav = () => (
+    <div className="flex items-center gap-2">
+        <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/login' && 'font-bold')}>
+            <Link href="/login">Log in</Link>
+        </Button>
+        <Button asChild className={cn("rounded-full", pathname === '/signup' ? 'bg-primary text-primary-foreground' : 'bg-white/50 text-primary')}>
+            <Link href="/signup">Sign Up</Link>
+        </Button>
+    </div>
+  )
 
   return (
-    <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-50 border-b">
+    <header className={cn("bg-background/80 backdrop-blur-sm sticky top-0 z-50", !isAuthPage && "border-b")}>
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
           <BrainCircuit className="h-7 w-7 text-primary" />
@@ -60,15 +72,17 @@ export default function Header() {
             <Button variant="outline" onClick={handleLogout} className="rounded-full">
               Logout
             </Button>
+          ) : isAuthPage ? (
+             <AuthNav />
           ) : (
-            <>
+            <div className="hidden sm:flex items-center gap-2">
                <Button asChild variant="ghost" className="rounded-full">
                 <Link href="/login">Login</Link>
               </Button>
               <Button asChild className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
                 <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // Adjust the import path as necessary
+import { auth } from '@/lib/firebase';
 import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -44,7 +46,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} className="w-full transition-transform hover:scale-105">
+    <Button type="submit" disabled={pending} className="w-full text-base py-6 rounded-full transition-transform hover:scale-105">
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       Sign In
     </Button>
@@ -57,40 +59,55 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [state, router]);
 
   return (
-    <div className="flex min-h-[calc(100vh-128px)] items-center justify-center bg-gradient-to-br from-background to-secondary px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-2xl transition-all hover:shadow-primary/20">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Welcome Back</CardTitle>
-          <CardDescription className="text-muted-foreground">Sign in to access your wellness dashboard.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={formAction} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="m@example.com" required className="transition-all focus:ring-2 focus:ring-primary/50"/>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required className="transition-all focus:ring-2 focus:ring-primary/50"/>
-            </div>
-            {state?.message && <p className="text-sm font-medium text-destructive">{state.message}</p>}
-            <SubmitButton />
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-           <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-semibold text-primary underline-offset-4 transition-colors hover:text-primary/80">
-                Sign up
-              </Link>
-            </p>
-        </CardFooter>
-      </Card>
+    <div className="flex-grow flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-16">
+        <div className="hidden md:flex justify-center">
+            <Image 
+                src="https://placehold.co/400x500.png"
+                alt="Illustration of a person in a calm state"
+                width={400}
+                height={500}
+                className="rounded-2xl"
+                data-ai-hint="woman thinking wellness"
+                priority
+            />
+        </div>
+        <Card className="w-full max-w-md shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl">
+          <CardHeader className="text-center space-y-3">
+            <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Welcome Back</CardTitle>
+            <CardDescription className="text-muted-foreground text-base">Sign in to continue your journey.</CardDescription>
+          </CardHeader>
+          <CardContent className="px-8 py-6">
+            <form action={formAction} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="font-semibold">Email</Label>
+                <Input id="email" name="email" type="email" placeholder="jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+              </div>
+              {state?.message && <p className="text-sm font-medium text-destructive text-center">{state.message}</p>}
+              <div className="pt-4">
+                <SubmitButton />
+              </div>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center pb-8">
+             <p className="text-sm text-muted-foreground">
+                Don&apos;t have an account?{' '}
+                <Link href="/signup" className="font-semibold text-primary hover:text-primary/90 transition-colors">
+                  Sign up
+                </Link>
+              </p>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
