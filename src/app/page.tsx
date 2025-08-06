@@ -50,12 +50,12 @@ export default function Home() {
           </div>
           <div className="relative">
             <Image
-              src="https://placehold.co/600x400.png"
-              alt="Woman calmly looking at her phone"
-              data-ai-hint="woman looking at phone"
+              src="/hero-image.jpg"
+              alt="A person using the NeuroWell device to monitor their wellness."
               width={600}
               height={400}
               className="rounded-2xl shadow-2xl"
+              priority
             />
           </div>
         </div>
