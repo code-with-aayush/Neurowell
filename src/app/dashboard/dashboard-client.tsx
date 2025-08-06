@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug } from 'lucide-react';
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -51,33 +50,21 @@ export default function DashboardClient() {
     isMonitoringRef.current = isMonitoring;
   }, [isMonitoring]);
 
-  const handleGenerateReport = async (values: typeof initialLatestValues) => {
-    if (isGenerating) return;
-
+  const handleRedirectToQuestionnaire = (values: typeof initialLatestValues) => {
      if (values.heartRate === 0 || values.spo2 === 0 || values.ecg === 0 || values.gsr === 0) {
-        setError("Cannot generate report with zero values. Please monitor again.");
+        setError("Cannot proceed with zero values. Please monitor again.");
+        setShowRedirectingOverlay(false);
         return;
     }
 
-    setIsGenerating(true); 
-    setShowRedirectingOverlay(true);
-    setError(null);
-      
-    const formData = new FormData();
-    formData.append('heartRate', values.heartRate.toString());
-    formData.append('spo2', values.spo2.toString());
-    formData.append('ecg', values.ecg.toString());
-    formData.append('gsr', values.gsr.toString());
-  
-    const result = await createReport(null, formData);
-  
-    if (result.success && result.redirectUrl) {
-      router.push(result.redirectUrl);
-    } else {
-      setError(result.message);
-      setIsGenerating(false);
-      setShowRedirectingOverlay(false);
-    }
+    const queryParams = new URLSearchParams({
+      heartRate: values.heartRate.toString(),
+      spo2: values.spo2.toString(),
+      ecg: values.ecg.toString(),
+      gsr: values.gsr.toString(),
+    });
+    
+    router.push(`/questionnaire?${queryParams.toString()}`);
   };
   
   const stopMonitoring = () => {
@@ -91,7 +78,7 @@ export default function DashboardClient() {
       if(currentLatestValues.heartRate > 0 || currentLatestValues.spo2 > 0) {
           setShowRedirectingOverlay(true); 
           setTimeout(() => {
-            handleGenerateReport(currentLatestValues);
+            handleRedirectToQuestionnaire(currentLatestValues);
           }, 5000); 
       }
       return currentLatestValues;
@@ -246,7 +233,7 @@ export default function DashboardClient() {
   
   const getStatusMessage = () => {
       if (showRedirectingOverlay) {
-        return 'Monitoring complete. Generating your report...';
+        return 'Monitoring complete. Preparing questionnaire...';
       }
       if (isMonitoring) {
         return `Monitoring... (${nonZeroDataCountRef.current}/${REQUIRED_DATA_POINTS} valid readings)`;
@@ -266,7 +253,7 @@ export default function DashboardClient() {
        {showRedirectingOverlay && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <h2 className="mt-4 text-xl font-semibold text-gray-700">Analyzing Data & Generating Report...</h2>
+          <h2 className="mt-4 text-xl font-semibold text-gray-700">Analyzing Data & Preparing Questionnaire...</h2>
           <p className="text-gray-500">Please wait. This will take about 5 seconds.</p>
         </div>
       )}
@@ -277,18 +264,7 @@ export default function DashboardClient() {
             <p className="text-gray-500">Real-time monitoring of your vital signs</p>
           </div>
           <div className="flex items-center gap-2">
-              {!isDeviceConnected ? (
-                <Button onClick={startMonitoring}>
-                  <Plug className="mr-2 h-4 w-4" />
-                  Connect Device
-                </Button>
-              ) : (
-                <Button onClick={handleDisconnectDevice} variant="outline">
-                    <Plug className="mr-2 h-4 w-4" />
-                    Disconnect Device
-                </Button>
-             )}
-             {!isMonitoring ? (
+            {!isMonitoring ? (
                 <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
                     <Play className="mr-2 h-4 w-4" />
                     Start Monitoring
@@ -297,6 +273,17 @@ export default function DashboardClient() {
                 <Button onClick={stopMonitoring} variant="destructive">
                     <StopCircle className="mr-2 h-4 w-4" />
                     Stop Monitoring
+                </Button>
+             )}
+             {!isDeviceConnected ? (
+                <Button onClick={startMonitoring}>
+                  <Plug className="mr-2 h-4 w-4" />
+                  Connect Device
+                </Button>
+              ) : (
+                <Button onClick={handleDisconnectDevice} variant="outline">
+                    <Plug className="mr-2 h-4 w-4" />
+                    Disconnect Device
                 </Button>
              )}
           </div>
@@ -414,3 +401,5 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
     </Card>
     );
 };
+
+    
