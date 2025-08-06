@@ -76,6 +76,7 @@ export default function DashboardClient() {
                   const newEcgPoint = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.ecg[0] };
                   const newGsrPoint = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.gsr[0] };
 
+                  // Use functional updates to ensure we are working with the latest state
                   allCollectedData.current.heartRate.push(newHrPoint);
                   allCollectedData.current.spo2.push(newSpo2Point);
                   allCollectedData.current.ecg.push(newEcgPoint);
@@ -98,7 +99,7 @@ export default function DashboardClient() {
               } catch (e) {
                 console.warn("Could not parse JSON from serial:", jsonString, e);
                 setError("Received invalid data from device.");
-                stopMonitoring();
+                stopMonitoring(true);
               }
           }
       }
@@ -107,7 +108,7 @@ export default function DashboardClient() {
           console.error("Error reading from serial port:", err);
           setError("Error reading from device. It may have been disconnected.");
           setIsDeviceConnected(false);
-          stopMonitoring();
+          stopMonitoring(true);
       }
     }
   };
@@ -115,7 +116,7 @@ export default function DashboardClient() {
   const requestDataFromArduino = async () => {
      if (!writerRef.current) {
         setError("Device is not ready to write.");
-        stopMonitoring();
+        stopMonitoring(true);
         return;
     }
      try {
@@ -125,7 +126,7 @@ export default function DashboardClient() {
     } catch (err) {
         console.error("Error writing to serial port:", err);
         setError("Could not send command to device.");
-        stopMonitoring();
+        stopMonitoring(true);
     }
   }
 
@@ -196,7 +197,7 @@ export default function DashboardClient() {
   const startMonitoring = async () => {
     setData(initialDataState);
     setLatestValues(initialLatestValues);
-    allCollectedData.current = initialDataState;
+    allCollectedData.current = { heartRate: [], spo2: [], ecg: [], gsr: [] };
     monitoringTimeElapsed.current = 0;
 
     setError(null);
@@ -217,13 +218,15 @@ export default function DashboardClient() {
     }, 1000);
   };
   
-  const stopMonitoring = () => {
+  const stopMonitoring = (force = false) => {
     if (monitoringIntervalRef.current) {
         clearInterval(monitoringIntervalRef.current);
         monitoringIntervalRef.current = null;
     }
     setIsMonitoring(false);
-    setMonitoringStatus(isGenerating ? monitoringStatus : 'Monitoring finished.');
+    if (!force) {
+      setMonitoringStatus(isGenerating ? monitoringStatus : 'Monitoring finished.');
+    }
   }
 
   const handleConnectDevice = async () => {
@@ -252,7 +255,7 @@ export default function DashboardClient() {
   };
 
   const handleDisconnectDevice = async () => {
-    stopMonitoring();
+    stopMonitoring(true);
     
     if (writerRef.current) {
         try {
@@ -459,3 +462,5 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
