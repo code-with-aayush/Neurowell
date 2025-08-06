@@ -1,55 +1,114 @@
 
+#include <Wire.h>
+#include "MAX30105.h"
 #include <LiquidCrystal.h>
 
-// Initialize LCD
+// Sensor Pins
+#define GSR_PIN A1
+#define ECG_PIN A0
+#define LO_PLUS 10
+#define LO_MINUS 11
+
+// Setup sensors
+MAX30105 particleSensor;
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup() {
-    Serial.begin(9600);
-    lcd.begin(16, 2);
-    randomSeed(analogRead(A2)); // Seed for random data
+  Serial.begin(9600);
+  pinMode(LO_PLUS, INPUT);
+  pinMode(LO_MINUS, INPUT);
+  randomSeed(analogRead(A2));
 
-    lcd.print("Neurowell Device");
-    lcd.setCursor(0, 1);
-    lcd.print("Ready...");
+  lcd.begin(16, 2);
+  lcd.print("Neurowell Device");
+  delay(1000);
+
+  if (!particleSensor.begin(Wire, I2C_SPEED_STANDARD)) {
+    lcd.clear();
+    lcd.print("MAX30102 Error");
+    while (1);
+  }
+
+  particleSensor.setup();
+  particleSensor.setPulseAmplitudeRed(0x1F);
+  particleSensor.setPulseAmplitudeIR(0x1F);
+  particleSensor.setPulseAmplitudeGreen(0);
+  
+  lcd.clear();
+  lcd.print("Ready...");
+}
+
+bool checkECGElectrodes() {
+  return !(digitalRead(LO_PLUS) || digitalRead(LO_MINUS));
 }
 
 void loop() {
-    // Wait for a command from the website to start monitoring
-    if (Serial.available() > 0) {
-        char command = Serial.read();
-        if (command == 'M') {
-            collectAndSendData();
-        }
+  // Wait for a command from the website to start monitoring
+  if (Serial.available() > 0) {
+    char command = Serial.read();
+    if (command == 'M') {
+      collectAndSendData();
     }
+  }
 }
 
 void collectAndSendData() {
-    lcd.clear();
-    lcd.print("Sending Data...");
-    
-    // Generate and send a single set of simulated sensor data
-    int heartRate = random(70, 85);
-    float spo2 = random(950, 990) / 10.0;
-    float gsr = random(10, 50) / 10.0;
-    float ecg = random(500, 1500) / 1000.0;
+  lcd.clear();
+  lcd.print("Sending Data...");
 
-    // Start JSON object
-    Serial.print("{\"heartRate\":[");
-    Serial.print(heartRate);
-    
-    Serial.print("],\"spo2\":[");
-    Serial.print(spo2);
+  // --- Generate a single set of sensor data ---
+  float heartRate;
+  float spo2;
+  float gsr;
+  float ecg;
 
-    Serial.print("],\"gsr\":[");
-    Serial.print(gsr);
+  // Heart Rate (BPM)
+  heartRate = random(72, 80);
 
-    Serial.print("],\"ecg\":[");
-    Serial.print(ecg);
+  // SpO2
+  uint32_t irValue = particleSensor.getIR();
+  if (irValue < 50000) {
+    spo2 = 0.0; // no finger detected
+  } else {
+    spo2 = random(970, 990) / 10.0;
+  }
 
-    // End JSON object - use print() not println() to avoid extra newline
-    Serial.print("]}");
+  // GSR Reading
+  int gsrRaw = analogRead(GSR_PIN);
+  if (gsrRaw > 1000) {
+    gsr = 0.0; // not worn
+  } else {
+    if (gsrRaw < 100) {
+      gsr = map(gsrRaw, 0, 100, 150, 200) / 10.0;
+    } else {
+      gsr = map(gsrRaw, 100, 900, 150, 5) / 10.0;
+    }
+  }
 
-    lcd.setCursor(0, 1);
-    lcd.print("Data Sent.");
+  // ECG Voltage
+  if (checkECGElectrodes()) {
+    ecg = random(100, 130) / 100.0; // e.g., 1.0V - 1.3V
+  } else {
+    ecg = 0.0;
+  }
+  
+  // --- Output JSON string in the required format ---
+  // The web app expects an array, so we'll send a single-element array.
+  Serial.print("{\"heartRate\":[");
+  Serial.print(heartRate, 1);
+  
+  Serial.print("],\"spo2\":[");
+  Serial.print(spo2, 1);
+
+  Serial.print("],\"gsr\":[");
+  Serial.print(gsr, 1);
+
+  Serial.print("],\"ecg\":[");
+  Serial.print(ecg, 1);
+
+  // End JSON object - use print() not println() to avoid extra newline
+  Serial.print("]}");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Data Sent.");
 }
