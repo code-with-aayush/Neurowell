@@ -84,7 +84,7 @@ function QuestionnaireForm() {
     }
 
     return (
-        <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
+        <div className="bg-background min-h-screen p-8 relative">
              {isSubmitting && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -95,7 +95,7 @@ function QuestionnaireForm() {
             <div className="max-w-3xl mx-auto">
                 <Card className="shadow-lg">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-bold">Mental Health & Lifestyle Assessment</CardTitle>
+                        <CardTitle className="text-2xl font-bold">Mental Wellness & Lifestyle Assessment</CardTitle>
                         <CardDescription>Your answers will be combined with your sensor data to create a more accurate and personalized wellness report.</CardDescription>
                     </CardHeader>
                     <CardContent>

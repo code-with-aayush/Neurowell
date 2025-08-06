@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { BrainCircuit } from 'lucide-react';
 
@@ -9,9 +10,9 @@ export default function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground mb-4">
               <BrainCircuit className="h-7 w-7 text-primary" />
-              <span className="font-semibold">Neurowell</span>
+              <span className="font-semibold">MindSync</span>
             </Link>
-            <p className="text-muted-foreground text-sm">Your mental health, monitored continuously.</p>
+            <p className="text-muted-foreground text-sm">Your mental wellness & lifestyle monitor.</p>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
@@ -38,7 +39,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Neurowell.</p>
+          <p>&copy; {new Date().getFullYear()} MindSync.</p>
         </div>
       </div>
     </footer>

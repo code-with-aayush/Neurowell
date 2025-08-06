@@ -249,7 +249,7 @@ export default function DashboardClient() {
   const chartDataGSR = [ { name: 'Normal', value: 5.0 }, { name: 'Live', value: latestValues.gsr } ];
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
+    <div className="bg-background min-h-screen p-8 relative">
        {showRedirectingOverlay && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -260,21 +260,10 @@ export default function DashboardClient() {
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Mental Health Dashboard</h1>
-            <p className="text-gray-500">Real-time monitoring of your vital signs</p>
+            <h1 className="text-3xl font-bold text-gray-800">Wellness & Lifestyle Dashboard</h1>
+            <p className="text-gray-500">Real-time monitoring of your vital signs and lifestyle.</p>
           </div>
           <div className="flex items-center gap-2">
-            {!isMonitoring ? (
-                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
-                    <Play className="mr-2 h-4 w-4" />
-                    Start Monitoring
-                </Button>
-             ) : (
-                <Button onClick={stopMonitoring} variant="destructive">
-                    <StopCircle className="mr-2 h-4 w-4" />
-                    Stop Monitoring
-                </Button>
-             )}
              {!isDeviceConnected ? (
                 <Button onClick={startMonitoring}>
                   <Plug className="mr-2 h-4 w-4" />
@@ -284,6 +273,17 @@ export default function DashboardClient() {
                 <Button onClick={handleDisconnectDevice} variant="outline">
                     <Plug className="mr-2 h-4 w-4" />
                     Disconnect Device
+                </Button>
+             )}
+            {!isMonitoring ? (
+                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Monitoring
+                </Button>
+             ) : (
+                <Button onClick={stopMonitoring} variant="destructive">
+                    <StopCircle className="mr-2 h-4 w-4" />
+                    Stop Monitoring
                 </Button>
              )}
           </div>
@@ -301,11 +301,11 @@ export default function DashboardClient() {
           </Card>
         )}
 
-        <Card className="bg-purple-50 border-purple-200 mb-8">
+        <Card className="bg-primary/10 border-primary/20 mb-8">
           <CardContent className="p-4 flex justify-between items-center">
             <div>
-              <CardTitle className="text-lg font-semibold text-purple-800">Current Status</CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardTitle className="text-lg font-semibold text-primary-foreground/80">Current Status</CardTitle>
+              <CardDescription className="text-primary-foreground/70">
                 {getStatusMessage()}
               </CardDescription>
             </div>
@@ -401,5 +401,3 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
     </Card>
     );
 };
-
-    

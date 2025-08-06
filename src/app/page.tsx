@@ -36,36 +36,23 @@ export default function Home() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter">
-              Your Mental Health, <br />
-              <span className="text-primary">Monitored</span> Continuously
+              A Clearer View of Your <br />
+              <span className="text-primary">Wellness & Lifestyle</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg">
-              Advanced biometric monitoring that tracks your mental well-being in real-time, providing insights to help you maintain optimal mental health.
+              MindSync connects your daily habits with your mental state. Our monitor provides a holistic view of your well-being by combining biometric data with lifestyle insights.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
                 <Link href="/dashboard" onClick={handleDashboardRedirect}>Start Monitoring <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
-            <div className="flex items-center gap-8 pt-6">
-              <div>
-                <p className="text-2xl font-bold">24/7</p>
-                <p className="text-muted-foreground">Monitoring</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">4</p>
-                <p className="text-muted-foreground">Vital Signs</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">AI</p>
-                <p className="text-muted-foreground">Powered</p>
-              </div>
-            </div>
           </div>
           <div className="relative">
             <Image
-              src="/hero-image.jpg"
-              alt="Woman with biometric data overlay"
+              src="https://placehold.co/600x400.png"
+              alt="Woman calmly looking at her phone"
+              data-ai-hint="woman looking at phone"
               width={600}
               height={400}
               className="rounded-2xl shadow-2xl"
@@ -79,7 +66,7 @@ export default function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
-            Simple steps to start monitoring your mental health with advanced biometric technology.
+            A simple, three-step process to connect your lifestyle to your well-being.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-left">
             <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
@@ -87,63 +74,63 @@ export default function Home() {
                 <Heart className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">1</div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Wear Your Device</h3>
-              <p className="text-muted-foreground">Put on your comfortable monitoring device to start tracking your vital signs.</p>
+              <h3 className="text-xl font-semibold mb-2">Monitor Your Vitals</h3>
+              <p className="text-muted-foreground">Wear your comfortable device to track key biometric signals like heart rate and stress levels.</p>
             </Card>
             <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
                <div className="flex items-center justify-between mb-4">
                 <Activity className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">2</div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Monitor Continuously</h3>
-              <p className="text-muted-foreground">Real-time tracking of heart rate, SpO2, ECG, and stress levels throughout your day.</p>
+              <h3 className="text-xl font-semibold mb-2">Answer a Few Questions</h3>
+              <p className="text-muted-foreground">Briefly tell us about your day—sleep, activities, and mood—to add context to your data.</p>
             </Card>
             <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
                <div className="flex items-center justify-between mb-4">
                 <Cpu className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">3</div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Get Insights</h3>
-              <p className="text-muted-foreground">Receive personalized recommendations and detailed reports about your mental well-being.</p>
+              <h3 className="text-xl font-semibold mb-2">Get Holistic Insights</h3>
+              <p className="text-muted-foreground">Receive a personalized report that connects your lifestyle choices to your mental well-being.</p>
             </Card>
           </div>
         </div>
       </section>
 
       {/* Advanced Monitoring Features Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Advanced Monitoring Features</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Understand the Full Picture</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
-            Professional-grade sensors and AI-powered analysis for comprehensive mental health tracking.
+            Our technology analyzes both your body's signals and your life's context.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="p-6 text-center hover:scale-105 transition-transform">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
               <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <Heart className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold">Heart Rate Monitoring</h3>
-              <p className="text-sm text-muted-foreground">Continuous tracking with intelligent alerts.</p>
+              <h3 className="text-lg font-semibold">Biometric Analysis</h3>
+              <p className="text-sm text-muted-foreground">Continuous tracking of heart rate, SpO2, and stress.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
                <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <Activity className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold">ECG Analysis</h3>
-              <p className="text-sm text-muted-foreground">Professional-grade electrocardiogram readings.</p>
+              <h3 className="text-lg font-semibold">Lifestyle Context</h3>
+              <p className="text-sm text-muted-foreground">Integrates your sleep, diet, and activity levels.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
                <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <Cpu className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold">Stress Detection</h3>
-              <p className="text-sm text-muted-foreground">Advanced GSR sensors for stress level monitoring.</p>
+              <h3 className="text-lg font-semibold">AI-Powered Insights</h3>
+              <p className="text-sm text-muted-foreground">Identifies patterns and potential risk factors.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
               <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <Shield className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold">Privacy First</h3>
+              <h3 className="text-lg font-semibold">Private and Secure</h3>
               <p className="text-sm text-muted-foreground">Your health data is encrypted and secure.</p>
             </Card>
           </div>
@@ -151,11 +138,11 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24">
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Take Control of Your Mental Health?</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Understand Your Wellness?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Start your journey to better mental well-being with our advanced monitoring technology.
+            Start your journey to better well-being by understanding the connection between your lifestyle and your mental state.
           </p>
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
             <Link href="/dashboard" onClick={handleDashboardRedirect}>Start Monitoring Now <ArrowRight className="ml-2 h-4 w-4" /></Link>

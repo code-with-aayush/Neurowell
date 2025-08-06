@@ -22,8 +22,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
-        <title>Neurowell</title>
-        <meta name="description" content="Monitor your mental wellness with real-time biometric data and AI-powered insights." />
+        <title>MindSync Monitor</title>
+        <meta name="description" content="Monitor your mental wellness and lifestyle with real-time biometric data and AI-powered insights." />
       </head>
       <body className="font-body antialiased h-full bg-background">
         <div className="flex flex-col min-h-screen">

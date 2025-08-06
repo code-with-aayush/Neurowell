@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -40,7 +41,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
           <BrainCircuit className="h-7 w-7 text-primary" />
-          <span className="font-semibold">Neurowell</span>
+          <span className="font-semibold">MindSync</span>
         </Link>
         {!isAuthPage && (
           <nav className="hidden md:flex items-center gap-2">
@@ -64,7 +65,7 @@ export default function Header() {
                <Button asChild variant="ghost" className="rounded-full">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button asChild className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button asChild className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
                 <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </>
