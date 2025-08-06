@@ -4,9 +4,9 @@
 import { generateHealthReport } from '@/ai/flows/generate-health-report'
 import { redirect } from 'next/navigation'
 
-function average(arr: number[]): number {
+function average(arr: { time: string, value: number }[]): number {
   if (arr.length === 0) return 0;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
+  return arr.reduce((a, b) => a + b.value, 0) / arr.length;
 }
 
 export async function createReport(
@@ -26,10 +26,10 @@ export async function createReport(
       };
     }
     
-    const heartRate = average(heartRateData.map((d: any) => d.value));
-    const spo2 = average(spo2Data.map((d: any) => d.value));
-    const ecg = average(ecgData.map((d: any) => d.value));
-    const gsr = average(gsrData.map((d: any) => d.value));
+    const heartRate = average(heartRateData);
+    const spo2 = average(spo2Data);
+    const ecg = average(ecgData);
+    const gsr = average(gsrData);
 
     const userProfile = "A 35-year-old individual interested in monitoring their general wellness and stress levels. No known chronic conditions, but experiences occasional anxiety.";
   
@@ -67,5 +67,3 @@ export async function createReport(
     };
   }
 }
-
-    

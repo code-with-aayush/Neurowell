@@ -36,12 +36,16 @@ export default function DashboardClient() {
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRedirectingOverlay, setShowRedirectingOverlay] = useState(false);
+  const [monitoringStatus, setMonitoringStatus] = useState('');
+  
   const router = useRouter();
   
   const readerRef = useRef<ReadableStreamDefaultReader<any> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<any> | null>(null);
   const portRef = useRef<any | null>(null); 
-  const keepReading = useRef(false);
+  const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const allCollectedData = useRef(initialDataState);
+  const monitoringTimeElapsed = useRef(0);
 
   const readFromSerialPort = async () => {
     if (!readerRef.current) return;
@@ -49,134 +53,163 @@ export default function DashboardClient() {
     const textDecoder = new TextDecoder();
     let buffer = '';
 
-    while (keepReading.current) {
-      try {
-        const { value, done } = await readerRef.current.read();
-        if (done) {
-          break;
-        }
-        
-        buffer += textDecoder.decode(value, { stream: true });
-        
-        let jsonEnd = buffer.indexOf('}');
-        while (jsonEnd !== -1) {
-            const jsonStart = buffer.lastIndexOf('{', jsonEnd);
-            if (jsonStart !== -1) {
-                const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
-                
-                try {
-                    const sensorData = JSON.parse(jsonString);
-                    keepReading.current = false; // Stop reading after getting data
-                    
-                    setIsMonitoring(false);
+    try {
+      const { value, done } = await readerRef.current.read();
+      if (done) return;
+      
+      buffer += textDecoder.decode(value, { stream: true });
+      
+      let jsonEnd = buffer.indexOf('}');
+      if (jsonEnd !== -1) {
+          const jsonStart = buffer.lastIndexOf('{', jsonEnd);
+          if (jsonStart !== -1) {
+              const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
+              
+              try {
+                  const sensorData = JSON.parse(jsonString);
+                  const now = new Date();
+                  const formatTime = (sec: number) => new Date(now.getTime() - sec * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
 
-                    const now = new Date();
-                    const formatTime = (sec: number) => new Date(now.getTime() - (5 - sec) * 1000).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' });
+                  const newHrPoint = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.heartRate[0] };
+                  const newSpo2Point = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.spo2[0] };
+                  const newEcgPoint = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.ecg[0] };
+                  const newGsrPoint = { time: formatTime(20 - monitoringTimeElapsed.current), value: sensorData.gsr[0] };
 
-                    const heartRateData = sensorData.heartRate.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-                    const spo2Data = sensorData.spo2.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-                    const ecgData = sensorData.ecg.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-                    const gsrData = sensorData.gsr.map((val: number, i: number) => ({ time: formatTime(i), value: val }));
-                   
-                    setData({
-                      heartRate: heartRateData,
-                      spo2: spo2Data,
-                      ecg: ecgData,
-                      gsr: gsrData
-                    });
+                  allCollectedData.current.heartRate.push(newHrPoint);
+                  allCollectedData.current.spo2.push(newSpo2Point);
+                  allCollectedData.current.ecg.push(newEcgPoint);
+                  allCollectedData.current.gsr.push(newGsrPoint);
+                  
+                  // Update live data on screen
+                  setData({
+                    heartRate: [...allCollectedData.current.heartRate].slice(-10),
+                    spo2: [...allCollectedData.current.spo2].slice(-10),
+                    ecg: [...allCollectedData.current.ecg].slice(-10),
+                    gsr: [...allCollectedData.current.gsr].slice(-10)
+                  });
+                  setLatestValues({
+                    heartRate: newHrPoint.value,
+                    spo2: newSpo2Point.value,
+                    ecg: newEcgPoint.value,
+                    gsr: newGsrPoint.value,
+                  });
 
-                    const last = (arr: any[]) => arr.length > 0 ? arr[arr.length - 1].value : 0;
-                    setLatestValues({
-                      heartRate: last(heartRateData),
-                      spo2: last(spo2Data),
-                      ecg: last(ecgData),
-                      gsr: last(gsrData)
-                    });
-                    
-                    // Wait for 15 seconds before generating the report
-                    setTimeout(() => {
-                        handleGenerateReport({ heartRate: sensorData.heartRate, spo2: sensorData.spo2, ecg: sensorData.ecg, gsr: sensorData.gsr });
-                    }, 15000);
-
-
-                    buffer = buffer.substring(jsonEnd + 1);
-                    break; 
-
-                } catch (e) {
-                  console.warn("Could not parse JSON from serial:", jsonString, e);
-                  setError("Received invalid data from device.");
-                  setIsMonitoring(false);
-                }
-                
-                buffer = buffer.substring(jsonEnd + 1);
-            }
-            jsonEnd = buffer.indexOf('}', jsonEnd > -1 ? jsonEnd + 1 : 0);
-        }
-
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-            console.error("Error reading from serial port:", err);
-            setError("Error reading from device. It may have been disconnected.");
-            setIsDeviceConnected(false);
-            keepReading.current = false;
-        }
-        setIsMonitoring(false);
-        break;
+              } catch (e) {
+                console.warn("Could not parse JSON from serial:", jsonString, e);
+                setError("Received invalid data from device.");
+                stopMonitoring();
+              }
+          }
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+          console.error("Error reading from serial port:", err);
+          setError("Error reading from device. It may have been disconnected.");
+          setIsDeviceConnected(false);
+          stopMonitoring();
       }
     }
   };
 
+  const requestDataFromArduino = async () => {
+     if (!writerRef.current) {
+        setError("Device is not ready to write.");
+        stopMonitoring();
+        return;
+    }
+     try {
+        const textEncoder = new TextEncoder();
+        await writerRef.current.write(textEncoder.encode("M"));
+        await readFromSerialPort();
+    } catch (err) {
+        console.error("Error writing to serial port:", err);
+        setError("Could not send command to device.");
+        stopMonitoring();
+    }
+  }
 
-  const handleGenerateReport = async (collectedData: { heartRate: number[], spo2: number[], ecg: number[], gsr: number[]}) => {
+  const handleGenerateReport = async () => {
     if (isGenerating) return;
 
+    setMonitoringStatus("Calculating final results...");
     setIsGenerating(true); 
-    setShowRedirectingOverlay(true);
-    setError(null);
-    
-    const createDataPoint = (value: number, index: number) => ({ time: `${index}s`, value });
-
-    const formData = new FormData();
-    formData.append('heartRate', JSON.stringify(collectedData.heartRate.map(createDataPoint)));
-    formData.append('spo2', JSON.stringify(collectedData.spo2.map(createDataPoint)));
-    formData.append('ecg', JSON.stringify(collectedData.ecg.map(createDataPoint)));
-    formData.append('gsr', JSON.stringify(collectedData.gsr.map(createDataPoint)));
-
-    const result = await createReport(null, formData);
-
-    if (result.success && result.redirectUrl) {
-      router.push(result.redirectUrl);
-    } else {
-      setError(result.message);
-      setIsGenerating(false);
-      setShowRedirectingOverlay(false);
+   
+    const processData = (dataPoints: DataPoint[]) => {
+      if (dataPoints.length <= 4) return dataPoints;
+      return dataPoints.slice(4); // Discard first 4 readings
     }
+
+    const finalHrData = processData(allCollectedData.current.heartRate);
+    const finalSpo2Data = processData(allCollectedData.current.spo2);
+    const finalEcgData = processData(allCollectedData.current.ecg);
+    const finalGsrData = processData(allCollectedData.current.gsr);
+
+    const average = (arr: DataPoint[]) => arr.length > 0 ? arr.reduce((acc, p) => acc + p.value, 0) / arr.length : 0;
+    
+    setLatestValues({
+      heartRate: average(finalHrData),
+      spo2: average(finalSpo2Data),
+      ecg: average(finalEcgData),
+      gsr: average(finalGsrData)
+    });
+
+    setMonitoringStatus("Final values displayed. Generating report in 10s...");
+
+    setTimeout(async () => {
+      setMonitoringStatus("Generating report...");
+      setShowRedirectingOverlay(true);
+      setError(null);
+      
+      const formData = new FormData();
+      formData.append('heartRate', JSON.stringify(finalHrData));
+      formData.append('spo2', JSON.stringify(finalSpo2Data));
+      formData.append('ecg', JSON.stringify(finalEcgData));
+      formData.append('gsr', JSON.stringify(finalGsrData));
+  
+      const result = await createReport(null, formData);
+  
+      if (result.success && result.redirectUrl) {
+        router.push(result.redirectUrl);
+      } else {
+        setError(result.message);
+        setIsGenerating(false);
+        setShowRedirectingOverlay(false);
+      }
+    }, 10000); // Wait 10 seconds
   };
 
   const startMonitoring = async () => {
-    if (!writerRef.current) {
-        setError("Device is not ready to write.");
-        return;
-    }
     setData(initialDataState);
     setLatestValues(initialLatestValues);
+    allCollectedData.current = initialDataState;
+    monitoringTimeElapsed.current = 0;
+
     setError(null);
     setIsMonitoring(true);
     setIsGenerating(false);
 
-    try {
-        const textEncoder = new TextEncoder();
-        await writerRef.current.write(textEncoder.encode("M")); // Send 'M' to start monitoring
-        
-        keepReading.current = true;
-        readFromSerialPort(); // Start reading AFTER sending the command
-    } catch (err) {
-        console.error("Error writing to serial port:", err);
-        setError("Could not send command to device.");
-        setIsMonitoring(false);
-    }
-  };
+    setMonitoringStatus('Starting monitoring...');
 
+    monitoringIntervalRef.current = setInterval(() => {
+        if (monitoringTimeElapsed.current < 20) {
+            setMonitoringStatus(`Monitoring... ${monitoringTimeElapsed.current + 1}s / 20s`);
+            requestDataFromArduino();
+            monitoringTimeElapsed.current++;
+        } else {
+            stopMonitoring();
+            handleGenerateReport();
+        }
+    }, 1000);
+  };
+  
+  const stopMonitoring = () => {
+    if (monitoringIntervalRef.current) {
+        clearInterval(monitoringIntervalRef.current);
+        monitoringIntervalRef.current = null;
+    }
+    setIsMonitoring(false);
+    setMonitoringStatus(isGenerating ? monitoringStatus : 'Monitoring finished.');
+  }
 
   const handleConnectDevice = async () => {
     if ('serial' in navigator) {
@@ -190,7 +223,6 @@ export default function DashboardClient() {
         setError(null);
         console.log("Device connected successfully!");
 
-        // Do not start reading immediately. Wait for user to click "Start Monitoring"
         readerRef.current = port.readable.getReader();
         writerRef.current = port.writable.getWriter();
         
@@ -205,7 +237,7 @@ export default function DashboardClient() {
   };
 
   const handleDisconnectDevice = async () => {
-    keepReading.current = false;
+    stopMonitoring();
     
     if (writerRef.current) {
         try {
@@ -304,7 +336,7 @@ export default function DashboardClient() {
             <div>
               <CardTitle className="text-lg font-semibold text-purple-800">Current Status</CardTitle>
               <CardDescription className="text-purple-600">
-                {isDeviceConnected ? 'Device connected and ready to monitor.' : 'Please connect your device to start monitoring.'}
+                {isMonitoring || isGenerating ? monitoringStatus : (isDeviceConnected ? 'Device connected and ready to monitor.' : 'Please connect your device to start monitoring.')}
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -328,10 +360,10 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring} />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring} />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring} />
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring} />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring && data.heartRate.length === 0} />
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring && data.spo2.length === 0} />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} />
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -412,6 +444,3 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
-    
-
-    
