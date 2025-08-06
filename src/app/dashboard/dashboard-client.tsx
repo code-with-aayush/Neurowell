@@ -44,12 +44,13 @@ export default function DashboardClient() {
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<any> | null>(null);
   const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const nonZeroDataCountRef = useRef(0);
   
   // This ref will hold the latest state, so the read loop can access it
-  const latestDataRef = useRef(data);
+  const isMonitoringRef = useRef(isMonitoring);
   useEffect(() => {
-    latestDataRef.current = data;
-  }, [data]);
+    isMonitoringRef.current = isMonitoring;
+  }, [isMonitoring]);
 
 
   const readLoop = async () => {
@@ -75,37 +76,44 @@ export default function DashboardClient() {
 
             try {
               const sensorData = JSON.parse(jsonString);
-              const now = new Date();
-              const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              
+              const isDataValid = sensorData.heartRate && sensorData.heartRate.length > 0;
+              const isDataNonZero = isDataValid && sensorData.heartRate[0] > 0 && sensorData.spo2[0] > 0 && sensorData.ecg[0] > 0 && sensorData.gsr[0] > 0;
 
-              if (sensorData.heartRate && sensorData.heartRate.length > 0) {
-                const newHrPoint = { time, value: sensorData.heartRate[0] };
-                const newSpo2Point = { time, value: sensorData.spo2[0] };
-                const newEcgPoint = { time, value: sensorData.ecg[0] };
-                const newGsrPoint = { time, value: sensorData.gsr[0] };
-                
-                // Use functional updates to ensure we have the latest state
-                setData(prevData => ({
-                  heartRate: [...prevData.heartRate, newHrPoint].slice(-20),
-                  spo2: [...prevData.spo2, newSpo2Point].slice(-20),
-                  ecg: [...prevData.ecg, newEcgPoint].slice(-20),
-                  gsr: [...prevData.gsr, newGsrPoint].slice(-20),
-                }));
-                
-                setLatestValues({
-                  heartRate: newHrPoint.value,
-                  spo2: newSpo2Point.value,
-                  ecg: newEcgPoint.value,
-                  gsr: newGsrPoint.value,
-                });
+              if (isDataValid) {
+                  const now = new Date();
+                  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                  const newHrPoint = { time, value: sensorData.heartRate[0] };
+                  const newSpo2Point = { time, value: sensorData.spo2[0] };
+                  const newEcgPoint = { time, value: sensorData.ecg[0] };
+                  const newGsrPoint = { time, value: sensorData.gsr[0] };
+                  
+                  setData(prevData => ({
+                    heartRate: [...prevData.heartRate, newHrPoint].slice(-20),
+                    spo2: [...prevData.spo2, newSpo2Point].slice(-20),
+                    ecg: [...prevData.ecg, newEcgPoint].slice(-20),
+                    gsr: [...prevData.gsr, newGsrPoint].slice(-20),
+                  }));
+                  
+                  setLatestValues({
+                    heartRate: newHrPoint.value,
+                    spo2: newSpo2Point.value,
+                    ecg: newEcgPoint.value,
+                    gsr: newGsrPoint.value,
+                  });
               }
+
+              if (isMonitoringRef.current && isDataNonZero) {
+                 nonZeroDataCountRef.current += 1;
+                 if(nonZeroDataCountRef.current >= 5) {
+                    stopMonitoring();
+                 }
+              }
+
             } catch (e) {
-                // This can happen if we get a partial JSON string.
-                // The loop will continue and hopefully parse a complete one next time.
                 console.warn("Could not parse JSON from serial:", jsonString, e);
             }
           } else {
-             // If we have a '}' but no '{' before it, the buffer is likely corrupt. Clear it.
              buffer = buffer.substring(jsonEnd + 1);
           }
         }
@@ -121,10 +129,15 @@ export default function DashboardClient() {
   };
   
   const handleGenerateReport = async () => {
-    if (isGenerating || !hasMonitored || latestValues.heartRate === 0) {
-        setError("Please run monitoring to collect some data before generating a report.");
+    if (isGenerating || !hasMonitored) {
+        setError("No monitoring data available to generate a report.");
         return;
     }
+     if (latestValues.heartRate === 0 || latestValues.spo2 === 0 || latestValues.ecg === 0 || latestValues.gsr === 0) {
+        setError("Cannot generate report with zero values. Please monitor again.");
+        return;
+    }
+
 
     setIsGenerating(true); 
     setShowRedirectingOverlay(true);
@@ -156,6 +169,7 @@ export default function DashboardClient() {
     setError(null);
     setIsMonitoring(true);
     setHasMonitored(false);
+    nonZeroDataCountRef.current = 0;
 
     monitoringIntervalRef.current = setInterval(async () => {
        if (writerRef.current) {
@@ -177,7 +191,7 @@ export default function DashboardClient() {
         monitoringIntervalRef.current = null;
     }
     setIsMonitoring(false);
-    if(latestDataRef.current.heartRate.length > 0) {
+    if(latestValues.heartRate > 0) {
         setHasMonitored(true);
     }
   }
@@ -197,7 +211,6 @@ export default function DashboardClient() {
         writerRef.current = port.writable.getWriter();
         readerRef.current = port.readable.getReader();
         
-        // Start the reading loop
         readLoop();
         
       } catch (err: any) {
@@ -430,5 +443,7 @@ const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boo
     </CardContent>
   </Card>
 )
+
+    
 
     
