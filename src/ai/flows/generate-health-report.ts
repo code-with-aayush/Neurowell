@@ -29,25 +29,33 @@ export type GenerateHealthReportInput = z.infer<typeof GenerateHealthReportInput
 const RecommendationSchema = z.object({
   title: z.string().describe('The title of the recommendation.'),
   description: z.string().describe('A detailed description of the recommendation.'),
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).describe('The priority of the recommendation.'),
+  icon: z.enum(['sleep', 'mindfulness', 'activity', 'caffeine']).describe('The most relevant icon for the recommendation.'),
 });
 
 const VitalSignAnalysisSchema = z.object({
-    value: z.string().describe("The formatted value of the vital sign, including units (e.g., '80 BPM')."),
+    value: z.string().describe("The formatted value of the vital sign, including units (e.g., '70 BPM')."),
     status: z.string().describe("The status of the vital sign (e.g., 'Normal', 'Elevated', 'Low')."),
-    interpretation: z.string().describe("A brief, one-sentence interpretation of the reading. IMPORTANT: This should be a factual statement about the sensor data itself, not a diagnosis. E.g., 'Your heart rate was in the normal resting range.'")
 });
 
+const MentalHealthInsightSchema = z.object({
+  fatigueProbability: z.enum(['Low', 'Moderate', 'High']).describe("The user's probability of fatigue."),
+  mindfulnessScore: z.enum(['Low', 'Moderate', 'High']).describe("The user's mindfulness score based on their focus and relaxation answers."),
+  riskOfBurnout: z.enum(['Low', 'Moderate', 'High']).describe("The user's risk of burnout based on feeling overwhelmed and lacking relaxation."),
+});
+
+
 const GenerateHealthReportOutputSchema = z.object({
-  wellnessScore: z.number().describe("An overall wellness score from 0 to 100, calculated by weighing sensor data against questionnaire answers. A lower score indicates a higher risk profile."),
-  summary: z.string().describe("A nuanced summary of the user's wellness state. It MUST distinguish between physical signs (sensors) and behavioral patterns (questionnaire). For example: 'Physically, your vital signs appear calm. However, your reported sleep patterns and feelings of anxiety indicate a potential risk for stress buildup.' Avoid definitive diagnoses like 'You are stressed.'"),
-  recommendations: z.array(RecommendationSchema).describe('A list of personalized health recommendations based on all available data.'),
+  wellnessScore: z.number().min(0).max(100).describe("An overall wellness score from 0 to 100. A lower score indicates a higher risk profile. Calculated by weighing sensor data against questionnaire answers."),
+  wellnessStatus: z.enum(['Good', 'Moderate', 'Needs Attention']).describe("A single-word status for the wellness score."),
+  physiologicalSummary: z.string().describe("A one-sentence summary of the user's physiological state based on the sensor data only."),
+  mentalHealthInsights: MentalHealthInsightSchema.describe("A breakdown of specific mental health metrics derived from the questionnaire."),
+  recommendations: z.array(RecommendationSchema).describe('A list of 4 personalized health recommendations based on all available data.'),
   vitals: z.object({
     heartRate: VitalSignAnalysisSchema,
     spo2: VitalSignAnalysisSchema,
     ecg: VitalSignAnalysisSchema,
     stress: VitalSignAnalysisSchema,
-  }).describe("A detailed breakdown and interpretation for each key vital sign.")
+  }).describe("A detailed breakdown for each key vital sign.")
 });
 export type GenerateHealthReportOutput = z.infer<typeof GenerateHealthReportOutputSchema>;
 
@@ -67,15 +75,10 @@ const prompt = ai.definePrompt({
   ## Reference Data for Analysis:
 
   **Sensor Data Interpretation Logic:**
-  - **Heart Rate (BPM):** Normal resting: 60-100. Elevated HR can be a sign of physical or mental arousal.
-  - **SpO2 (%):** Normal: >95%. Relevant for context, especially if combined with panic symptoms.
-  - **GSR (Galvanic Skin Response, μS):** Measures emotional arousal. Spikes can indicate a stress response.
-  - **ECG (mV):** Provides context on cardiac electrical activity. Normal: ~1.0-1.5mV.
-
-  **Wellness States Logic (Risk Profiles):**
-  - **Healthy State:** Normal, stable vitals and low scores on the questionnaire.
-  - **At Risk / Needs Attention:** Vitals may be normal, but questionnaire answers indicate risk factors (e.g., poor sleep, high caffeine). This is a key state to identify.
-  - **Immediate Concern:** Vitals are abnormal (e.g., high HR, high GSR) AND questionnaire scores are high.
+  - **Heart Rate (BPM):** Normal resting: 60-100.
+  - **SpO2 (%):** Normal: >95%.
+  - **GSR (Galvanic Skin Response, μS):** Measures emotional arousal. Normal resting: 1-10 μS.
+  - **ECG (mV):** Normal: ~1.0-1.5mV.
 
   ## User's Data to Analyze:
 
@@ -96,12 +99,16 @@ const prompt = ai.definePrompt({
   ## Your Task: Generate the Report in JSON Format
 
   1.  **Wellness Score**: Calculate an overall wellness score from 0-100. A lower score means a higher risk profile. The score should heavily factor in the questionnaire. Normal vitals with high-risk answers should result in a score around 50-65.
-  2.  **Vitals Analysis**: For each of the four vitals, provide:
+  2.  **Wellness Status**: Based on the score, determine a status: >80 is 'Good', 50-80 is 'Moderate', <50 is 'Needs Attention'.
+  3.  **Physiological Summary**: Write a one-sentence summary about the sensor data. Example: "Your key physiological signs are within normal ranges."
+  4.  **Vitals Analysis**: For each of the four vitals, provide:
       - A 'value' string with the number and its unit.
-      - A 'status' (e.g., "Normal", "Elevated", "Slightly Low", "High").
-      - A concise, one-sentence 'interpretation'. This MUST be a factual statement about the data, not a conclusion about the user's feelings. (e.g., "Your heart rate was within the normal resting range.").
-  3.  **Summary**: Generate a nuanced summary (2-3 sentences). It MUST start by addressing the physical data, then connect it to the behavioral data from the questionnaire to describe the overall wellness/risk status. For example: "Physically, your vital signs appear calm and stable during the reading. However, your self-reported feelings of anxiety and difficulty sleeping are important patterns to be aware of, as they can contribute to stress over time."
-  4.  **Recommendations**: Provide four distinct, personalized recommendations. These recommendations MUST be based on the combined analysis, targeting the highest-risk areas identified (e.g., if sleep score is high, recommend a sleep-related action). Each must include a title, description, and priority.`,
+      - A 'status' string (e.g., "Normal", "Elevated", "Slightly Low", "High").
+  5.  **Mental Health Insights**: Based on the questionnaire, determine the values for:
+      - **fatigueProbability**: ('Low', 'Moderate', 'High') based on Q1 & Q2.
+      - **mindfulnessScore**: ('Low', 'Moderate', 'High') based on Q5 & Q6.
+      - **riskOfBurnout**: ('Low', 'Moderate', 'High') based on Q3 & Q6.
+  6.  **Recommendations**: Provide exactly four distinct, personalized recommendations. Each must include a title, a short description (max 15 words), and a relevant icon ('sleep', 'mindfulness', 'activity', 'caffeine'). These recommendations MUST be based on the combined analysis, targeting the highest-risk areas identified.`,
 });
 
 const generateHealthReportFlow = ai.defineFlow(
