@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -65,9 +66,9 @@ const prompt = ai.definePrompt({
 
   1.  **Wellness Score**: Calculate an overall wellness score from 0-100 based on the provided data. A higher score indicates better health. Consider all vitals. For example, a heart rate of 75, SpO2 of 98%, ECG of 1.1mV and GSR of 4uS would be a high score. Deviations from normal ranges should lower the score.
   2.  **Vitals Analysis**: For each of the four vitals (Heart Rate, SpO2, ECG, Stress), provide:
-      - A `value` string with the number and its unit.
-      - A `status` (e.g., "Normal", "Elevated", "Slightly Low", "High"). Normal ranges are: HR 60-100, SpO2 >95%, ECG ~1.0-1.5mV, GSR < 10uS.
-      - A concise, one-sentence `interpretation` of the reading.
+      - A value string with the number and its unit.
+      - A status (e.g., "Normal", "Elevated", "Slightly Low", "High"). Normal ranges are: HR 60-100, SpO2 >95%, ECG ~1.0-1.5mV, GSR < 10uS.
+      - A concise, one-sentence interpretation of the reading.
   3.  **Summary**: Generate a concise summary (2-3 sentences) about the user's overall wellness based on the score and key indicators.
   4.  **Recommendations**: Provide four distinct, personalized recommendations. Each must include a title, a brief description, and a priority level (HIGH, MEDIUM, LOW).`,
 });
