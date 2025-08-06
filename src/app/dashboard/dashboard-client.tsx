@@ -5,8 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug, FileText } from 'lucide-react';
-import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug } from 'lucide-react';
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { createReport } from './actions';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,7 +35,6 @@ export default function DashboardClient() {
   const [latestValues, setLatestValues] = useState(initialLatestValues);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isDeviceConnected, setIsDeviceConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRedirectingOverlay, setShowRedirectingOverlay] = useState(false);
   
@@ -47,7 +46,6 @@ export default function DashboardClient() {
   const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const nonZeroDataCountRef = useRef(0);
   
-  // This ref will hold the latest state, so the read loop can access it
   const isMonitoringRef = useRef(isMonitoring);
   useEffect(() => {
     isMonitoringRef.current = isMonitoring;
@@ -89,17 +87,46 @@ export default function DashboardClient() {
     }
     setIsMonitoring(false);
     
-    // Use a function to pass the latest state to avoid stale state issues.
     setLatestValues(currentLatestValues => {
       if(currentLatestValues.heartRate > 0 || currentLatestValues.spo2 > 0) {
-          setShowRedirectingOverlay(true); // Show overlay immediately on stop
+          setShowRedirectingOverlay(true); 
           setTimeout(() => {
             handleGenerateReport(currentLatestValues);
-          }, 5000); // 5-second delay
+          }, 5000); 
       }
       return currentLatestValues;
     });
   }
+
+  const handleDisconnectDevice = async () => {
+    if (isMonitoring) {
+      stopMonitoring();
+    }
+    
+    if (readerRef.current) {
+      try {
+        await readerRef.current.cancel();
+        readerRef.current.releaseLock();
+      } catch (error) { /* Ignore */ }
+      readerRef.current = null;
+    }
+    
+    if (writerRef.current) {
+        try {
+            writerRef.current.releaseLock();
+        } catch (error) { /* Ignore */ }
+        writerRef.current = null;
+    }
+
+    if (portRef.current) {
+        try {
+            await portRef.current.close();
+        } catch (error) { /* Ignore */ }
+        portRef.current = null;
+    }
+
+    console.log("Device disconnected.");
+  };
 
   const readLoop = async () => {
     const textDecoder = new TextDecoder();
@@ -114,13 +141,12 @@ export default function DashboardClient() {
 
         buffer += textDecoder.decode(value, { stream: true });
         
-        // Process all complete JSON objects in the buffer
         let jsonEnd;
         while ((jsonEnd = buffer.indexOf('}')) !== -1) {
           const jsonStart = buffer.lastIndexOf('{', jsonEnd);
           if (jsonStart !== -1) {
             const jsonString = buffer.substring(jsonStart, jsonEnd + 1);
-            buffer = buffer.substring(jsonEnd + 1); // Remove processed part
+            buffer = buffer.substring(jsonEnd + 1); 
 
             try {
               const sensorData = JSON.parse(jsonString);
@@ -177,7 +203,6 @@ export default function DashboardClient() {
   };
 
   const startMonitoring = async () => {
-    // Simplified: Automatically try to connect on start
     if (!portRef.current) {
       if ('serial' in navigator) {
         try {
@@ -185,7 +210,6 @@ export default function DashboardClient() {
           const port = await navigator.serial.requestPort();
           await port.open({ baudRate: 9600 });
           portRef.current = port;
-          setIsDeviceConnected(true);
           writerRef.current = port.writable.getWriter();
           readerRef.current = port.readable.getReader();
           readLoop();
@@ -220,44 +244,6 @@ export default function DashboardClient() {
     }, 1000);
   };
   
-  const handleDisconnectDevice = async () => {
-    if (isMonitoring) {
-      stopMonitoring();
-    }
-    
-    if (readerRef.current) {
-      try {
-        await readerRef.current.cancel();
-        readerRef.current.releaseLock();
-      } catch (error) { /* Ignore */ }
-      readerRef.current = null;
-    }
-    
-    if (writerRef.current) {
-        try {
-            writerRef.current.releaseLock();
-        } catch (error) { /* Ignore */ }
-        writerRef.current = null;
-    }
-
-    if (portRef.current) {
-        try {
-            await portRef.current.close();
-        } catch (error) { /* Ignore */ }
-        portRef.current = null;
-    }
-
-    setIsDeviceConnected(false);
-    console.log("Device disconnected.");
-  };
-
-  
-  const chartConfig = {
-    value: {
-      label: "Value",
-    },
-  };
-  
   const getStatusMessage = () => {
       if (showRedirectingOverlay) {
         return 'Monitoring complete. Generating your report...';
@@ -265,11 +251,10 @@ export default function DashboardClient() {
       if (isMonitoring) {
         return `Monitoring... (${nonZeroDataCountRef.current}/${REQUIRED_DATA_POINTS} valid readings)`;
       }
-      if (isDeviceConnected) {
-        return 'Device connected. Click "Start Monitoring" to begin.';
-      }
-      return 'Please connect your device to start.';
+      return 'Click "Start Monitoring" to begin.';
   }
+
+  const isDeviceConnected = !!portRef.current;
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-8 relative">
@@ -288,7 +273,7 @@ export default function DashboardClient() {
           </div>
           <div className="flex items-center gap-2">
              {!isMonitoring ? (
-                <Button onClick={startMonitoring}>
+                <Button onClick={startMonitoring} disabled={!isDeviceConnected}>
                     <Play className="mr-2 h-4 w-4" />
                     Start Monitoring
                 </Button>
@@ -298,7 +283,12 @@ export default function DashboardClient() {
                     Stop Monitoring
                 </Button>
              )}
-              {isDeviceConnected && (
+              {!isDeviceConnected ? (
+                <Button onClick={startMonitoring}>
+                  <Plug className="mr-2 h-4 w-4" />
+                  Connect Device
+                </Button>
+              ) : (
                 <Button onClick={handleDisconnectDevice} variant="outline">
                     <Plug className="mr-2 h-4 w-4" />
                     Disconnect Device
@@ -348,109 +338,60 @@ export default function DashboardClient() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring && data.heartRate.length === 0} />
-          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring && data.spo2.length === 0} />
-          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} />
-          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} />
+          <VitalSignCard icon={Heart} title="Heart Rate" value={latestValues.heartRate.toFixed(0)} unit="BPM" isLoading={isMonitoring && data.heartRate.length === 0} liveValue={latestValues.heartRate} normalValue={80} dataKey="heartRate" domain={[0, 150]}/>
+          <VitalSignCard icon={Droplets} title="Blood Oxygen" value={`${latestValues.spo2.toFixed(1)}`} unit="%" isLoading={isMonitoring && data.spo2.length === 0} liveValue={latestValues.spo2} normalValue={97} dataKey="spo2" domain={[80, 100]} />
+          <VitalSignCard icon={Activity} title="ECG Signal" value={latestValues.ecg.toFixed(2)} unit="mV" isLoading={isMonitoring && data.ecg.length === 0} liveValue={latestValues.ecg} normalValue={1.0} dataKey="ecg" domain={[0, 3.3]}/>
+          <VitalSignCard icon={Zap} title="Stress Level (GSR)" value={latestValues.gsr.toFixed(2)} unit="μS" isLoading={isMonitoring && data.gsr.length === 0} liveValue={latestValues.gsr} normalValue={5.0} dataKey="gsr" domain={[0, 20]} />
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-           <ChartCard title="Heart Rate (BPM)" isPaused={!isMonitoring && data.heartRate.length > 0}>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-               <AreaChart data={data.heartRate} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                 <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                 <YAxis domain={[50, 120]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                 <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                 <defs>
-                    <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                 <Area type="monotone" dataKey="value" stroke="hsl(var(--destructive))" fill="url(#colorHr)" strokeWidth={2} dot={false} />
-               </AreaChart>
-             </ChartContainer>
-          </ChartCard>
-          <ChartCard title="Blood Oxygen (SpO2)" isPaused={!isMonitoring && data.spo2.length > 0}>
-              <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <AreaChart data={data.spo2} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[90, 100]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                  <defs>
-                    <linearGradient id="colorSpo2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#colorSpo2)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ChartContainer>
-           </ChartCard>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6">
-            <ChartCard title="ECG Waveform" isPaused={!isMonitoring && data.ecg.length > 0}>
-                <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <AreaChart data={data.ecg} margin={{ top: 5, right: 10, left: -30, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <YAxis domain={[0, 3.3]} tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                    <defs>
-                        <linearGradient id="colorEcg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="value" stroke="hsl(var(--accent))" fill="url(#colorEcg)" strokeWidth={2} dot={false} />
-                </AreaChart>
-                </ChartContainer>
-            </ChartCard>
-        </div>
-
       </div>
     </div>
   );
 }
 
-const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => (
-  <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
-    <CardContent className="p-4">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 p-2 rounded-lg">
-            <Icon className="h-6 w-6 text-primary" />
+const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading, liveValue, normalValue, dataKey, domain }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean, liveValue: number, normalValue: number, dataKey: string, domain: [number, number] }) => {
+  
+  const chartData = [
+    { name: 'Normal', [dataKey]: normalValue },
+    { name: 'Live', [dataKey]: liveValue },
+  ];
+
+  return (
+    <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-gray-500">{title}</p>
           </div>
-          <p className="text-gray-500">{title}</p>
         </div>
-      </div>
-       {isLoading ? (
-        <Skeleton className="h-8 w-3/4 mt-1" />
-      ) : (
-        <div className="text-3xl font-bold text-gray-800">
-          {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
+        {isLoading ? (
+          <Skeleton className="h-8 w-3/4 mt-1" />
+        ) : (
+          <div className="text-3xl font-bold text-gray-800">
+            {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
+          </div>
+        )}
+         <div className="h-[100px] mt-4">
+          <ChartContainer config={{}} className="w-full h-full">
+            <BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} accessibilityLayer>
+                <CartesianGrid vertical={false} strokeDasharray="3 3"/>
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
+                <YAxis type="number" domain={domain} tick={{ fontSize: 12 }} tickLine={false} axisLine={false}/>
+                <ChartTooltip
+                    cursor={{fill: 'hsl(var(--muted))'}}
+                    content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Bar dataKey={dataKey} radius={4}>
+                    {chartData.map((entry, index) => (
+                         <div key={`cell-${index}`} style={{ backgroundColor: entry.name === 'Live' ? 'hsl(var(--primary))' : 'hsl(var(--secondary))' }}/>
+                    ))}
+                </Bar>
+            </BarChart>
+          </ChartContainer>
         </div>
-      )}
-    </CardContent>
-  </Card>
-);
-
-const ChartCard = ({ title, isPaused, children }: { title: string, isPaused: boolean, children: React.ReactNode }) => (
-  <Card className="bg-white shadow-sm">
-    <CardHeader className="flex flex-row justify-between items-center">
-      <CardTitle className="font-semibold text-gray-800">{title}</CardTitle>
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <div className={`w-2 h-2 rounded-full ${!isPaused ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-        <span>{!isPaused ? 'Live' : 'Paused'}</span>
-      </div>
-    </CardHeader>
-    <CardContent>
-      {children}
-    </CardContent>
-  </Card>
-)
-
-    
+      </CardContent>
+    </Card>
+  );
+};
