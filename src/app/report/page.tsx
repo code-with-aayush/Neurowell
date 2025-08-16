@@ -186,7 +186,7 @@ function ReportContent() {
                                         cx="50" cy="50" r="45" 
                                         stroke="url(#gradient)" strokeWidth="10" fill="none" 
                                         strokeDasharray={2 * Math.PI * 45}
-                                        strokeDashoffset={(2 * Math.PI * 45) * (1 - wellnessScore / 100)}
+                                        strokeDashoffset={(2 * Math.PI * 45) * (1 - (wellnessScore || 0) / 100)}
                                         strokeLinecap="round"
                                         transform="rotate(-90 50 50)"
                                     />

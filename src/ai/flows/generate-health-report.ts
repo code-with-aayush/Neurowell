@@ -45,7 +45,7 @@ const MentalHealthInsightSchema = z.object({
 
 
 const GenerateHealthReportOutputSchema = z.object({
-  wellnessScore: z.number().min(0).max(100).describe("An overall wellness score from 0 to 100. A lower score indicates a higher risk profile. Calculated by weighing sensor data against questionnaire answers."),
+  wellnessScore: z.number().min(0).max(100).describe("An overall wellness score from 0 to 100. A lower score indicates a higher risk profile. This score MUST be calculated dynamically based on the user's data. It is NOT a static value. It should be heavily weighted by the questionnaire answers. For example, a user with normal vitals but high-risk answers (e.g., high scores for 'overwhelmed' and 'lacking sleep') should have a score between 50-65. A user with good vitals and good answers should be > 80."),
   wellnessStatus: z.enum(['Good', 'Moderate', 'Needs Attention']).describe("A single-word status for the wellness score."),
   physiologicalSummary: z.string().describe("A one-sentence summary of the user's physiological state based on the sensor data only. Example: 'Your key physiological signs are within normal ranges.'"),
   mentalHealthSummary: z.string().describe("A one-sentence summary of the user's mental/lifestyle state based on the questionnaire. Example: 'However, your lifestyle habits indicate a high risk of burnout.'"),
@@ -98,7 +98,7 @@ const prompt = ai.definePrompt({
 
   ## Your Task: Generate the Report in JSON Format
 
-  1.  **Wellness Score**: Calculate an overall wellness score from 0-100. A lower score means a higher risk profile. The score should heavily factor in the questionnaire. Normal vitals with high-risk answers should result in a score around 50-65.
+  1.  **Wellness Score**: Calculate an overall wellness score from 0-100. This is a critical dynamic calculation. A lower score means a higher risk profile. The score must be heavily factored by the questionnaire. For example, if vitals are normal but q2, q3, and q6 scores are high (2 or 3), the wellness score should be in the 50-65 range. If vitals and answers are good, the score should be >80. Do not use a fixed value.
   2.  **Wellness Status**: Based on the score, determine a status: >80 is 'Good', 50-80 is 'Moderate', <50 is 'Needs Attention'.
   3.  **Physiological Summary**: Write a one-sentence summary about the sensor data only.
   4.  **Mental Health Summary**: Write a one-sentence summary about the lifestyle/questionnaire data.
