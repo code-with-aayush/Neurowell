@@ -10,12 +10,16 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -30,6 +34,8 @@ export default function Home() {
       router.push('/login');
     }
   };
+
+  const heroImageSrc = theme === 'dark' ? '/neurowell_home_dark.png' : '/neurowell_home.png';
 
   return (
     <div className="bg-background text-foreground">
@@ -51,14 +57,18 @@ export default function Home() {
             </div>
           </div>
           <div className="relative">
-            <Image
-              src="/neurowell_home.png"
-              alt="A clinician reviewing patient data on a tablet."
-              width={600}
-              height={400}
-              className="rounded-2xl shadow-2xl"
-              priority
-            />
+            {mounted ? (
+              <Image
+                src={heroImageSrc}
+                alt="A clinician reviewing patient data on a tablet."
+                width={600}
+                height={400}
+                className="rounded-2xl shadow-2xl"
+                priority
+              />
+            ) : (
+              <div className="w-[600px] h-[400px] bg-muted rounded-2xl animate-pulse"></div>
+            )}
           </div>
         </div>
       </section>
@@ -154,5 +164,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
