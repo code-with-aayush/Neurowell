@@ -2,6 +2,8 @@
 'use server'
 
 import { generateHealthReport } from '@/ai/flows/generate-health-report'
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { redirect } from 'next/navigation';
 
 export async function createReportWithQuestions(
@@ -39,16 +41,25 @@ export async function createReportWithQuestions(
       gsr,
       ...answers
     });
+    
+    // Save the report to Firestore
+    const reportForDb = {
+        ...report,
+        patientId,
+        patientName,
+        createdAt: serverTimestamp(),
+    };
+    const reportRef = await addDoc(collection(db, `patients/${patientId}/reports`), reportForDb);
   
     const params = new URLSearchParams();
     params.set('patientId', patientId);
     params.set('patientName', patientName);
+    params.set('reportId', reportRef.id);
     params.set('wellnessScore', report.wellnessScore.toString());
     params.set('wellnessStatus', report.wellnessStatus);
     params.set('physiologicalSummary', report.physiologicalSummary);
     params.set('mentalHealthSummary', report.mentalHealthSummary);
     
-    // Encode complex objects to Base64 to safely pass them in the URL
     params.set('recommendations', Buffer.from(JSON.stringify(report.recommendations)).toString('base64'));
     params.set('vitals', Buffer.from(JSON.stringify(report.vitals)).toString('base64'));
 
@@ -56,7 +67,7 @@ export async function createReportWithQuestions(
     
     return {
         success: true,
-        message: 'Report generated successfully.',
+        message: 'Report generated and saved successfully.',
         redirectUrl: redirectUrl
     };
 

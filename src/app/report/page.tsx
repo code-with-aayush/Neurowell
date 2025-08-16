@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -54,6 +54,7 @@ function ReportContent() {
 
   const patientId = searchParams.get('patientId');
   const patientName = searchParams.get('patientName');
+  const reportId = searchParams.get('reportId');
   const physiologicalSummary = searchParams.get('physiologicalSummary') || 'No summary available.';
   const mentalHealthSummary = searchParams.get('mentalHealthSummary') || 'No insights available.';
   const recommendationsStr = searchParams.get('recommendations');
@@ -94,6 +95,18 @@ function ReportContent() {
                     </div>
                   )}
               </div>
+              <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                    <Link href={`/reports/${patientId}`}>
+                        <FileText className="mr-2 h-4 w-4"/>
+                        View Report History
+                    </Link>
+                </Button>
+                <Button variant="outline" onClick={() => window.print()}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download or Print Report
+                </Button>
+             </div>
           </div>
         </header>
 

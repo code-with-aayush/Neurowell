@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Users, LogOut, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Users, LogOut, ArrowRight, UserPlus } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
@@ -52,6 +52,12 @@ export default function Header() {
         <Link href="/patients" className="flex items-center gap-2">
           <Users className="h-4 w-4"/>
           My Patients
+        </Link>
+      </Button>
+      <Button asChild variant={pathname === '/patients/new' ? 'secondary' : 'ghost'} className="rounded-full">
+        <Link href="/patients/new" className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4"/>
+          New Patient
         </Link>
       </Button>
       <Button variant="outline" onClick={handleLogout} className="rounded-full">
