@@ -39,7 +39,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md mx-auto">
              <div className="flex justify-center mb-8">
                 <Image 
-                    src="/auth_page.png"
+                    src="https://placehold.co/200x200.png"
                     alt="Illustration of a professional helping a patient"
                     width={200}
                     height={200}
@@ -82,5 +82,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
