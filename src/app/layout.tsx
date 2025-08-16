@@ -25,7 +25,7 @@ export default function RootLayout({
         <title>NeuroWell Monitor for Professionals</title>
         <meta name="description" content="Empowering clinicians with real-time biometric data and AI-powered insights for patient care." />
       </head>
-      <body className="font-body antialiased h-full bg-background">
+      <body className="font-body antialiased h-full bg-background" suppressHydrationWarning={true}>
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-grow">
