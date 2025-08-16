@@ -326,8 +326,8 @@ function DashboardClientInternal() {
         <Card className="bg-primary/10 border-primary/20 mb-8">
           <CardContent className="p-4 flex justify-between items-center">
             <div>
-              <CardTitle className="text-lg font-semibold text-primary-foreground/80">Session Status</CardTitle>
-              <CardDescription className="text-primary-foreground/70">
+              <CardTitle className="text-lg font-semibold text-foreground">Session Status</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 {getStatusMessage()}
               </CardDescription>
             </div>
