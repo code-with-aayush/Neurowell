@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { usePathname } from 'next/navigation';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export default function RootLayout({
   children,
@@ -26,14 +27,21 @@ export default function RootLayout({
         <meta name="description" content="Empowering clinicians with real-time biometric data and AI-powered insights for patient care." />
       </head>
       <body className="font-body antialiased h-full bg-background" suppressHydrationWarning={true}>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">
-            {children}
-          </main>
-          {showFooter && <Footer />}
-        </div>
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-grow">
+              {children}
+            </main>
+            {showFooter && <Footer />}
+          </div>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

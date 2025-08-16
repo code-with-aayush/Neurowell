@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +38,7 @@ export default function Header() {
   
   const AuthNav = () => (
     <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/login' && 'font-bold')}>
             <Link href="/login">Log in</Link>
         </Button>
@@ -48,6 +50,7 @@ export default function Header() {
   
   const LoggedInNav = () => (
     <div className="flex items-center gap-2">
+       <ThemeToggle />
       <Button asChild variant={pathname === '/patients' ? 'secondary' : 'ghost'} className="rounded-full">
         <Link href="/patients" className="flex items-center gap-2">
           <Users className="h-4 w-4"/>
@@ -69,6 +72,7 @@ export default function Header() {
 
   const LoggedOutNav = () => (
     <div className="hidden sm:flex items-center gap-2">
+       <ThemeToggle />
        <Button asChild variant="ghost" className="rounded-full">
         <Link href="/login">Login</Link>
       </Button>
