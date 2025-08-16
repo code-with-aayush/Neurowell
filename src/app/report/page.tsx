@@ -3,10 +3,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb, FileText } from 'lucide-react';
+import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const statusColors = {
   Good: 'text-green-600 bg-green-100',
@@ -38,34 +40,89 @@ const RecommendationIcon = ({ icon, className }: { icon: string, className?: str
   }
 };
 
-const safelyDecodeAndParse = (str: string | null) => {
-    if (!str) return null;
-    try {
-        const decoded = Buffer.from(str, 'base64').toString('utf-8');
-        return JSON.parse(decoded);
-    } catch (e) {
-        console.error("Failed to decode or parse string from URL:", e);
-        return null; 
-    }
+interface ReportData {
+    patientId: string;
+    patientName: string;
+    reportId: string;
+    physiologicalSummary: string;
+    mentalHealthSummary: string;
+    recommendations: any[];
+    vitals: any;
+    wellnessScore: number;
+    wellnessStatus: string;
 }
 
 function ReportContent() {
   const searchParams = useSearchParams();
-
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const patientId = searchParams.get('patientId');
-  const patientName = searchParams.get('patientName');
   const reportId = searchParams.get('reportId');
-  const physiologicalSummary = searchParams.get('physiologicalSummary') || 'No summary available.';
-  const mentalHealthSummary = searchParams.get('mentalHealthSummary') || 'No insights available.';
-  const recommendationsStr = searchParams.get('recommendations');
-  const vitalsStr = searchParams.get('vitals');
-  const wellnessScoreStr = searchParams.get('wellnessScore');
-  const wellnessStatus = searchParams.get('wellnessStatus') || 'Moderate';
+
+  useEffect(() => {
+    if (!patientId || !reportId) {
+        setError("Patient ID or Report ID is missing.");
+        setIsLoading(false);
+        return;
+    }
+
+    const fetchReport = async () => {
+        try {
+            const reportRef = doc(db, `patients/${patientId}/reports`, reportId);
+            const reportSnap = await getDoc(reportRef);
+
+            if (reportSnap.exists()) {
+                const data = reportSnap.data();
+                setReportData({
+                    patientId: data.patientId,
+                    patientName: data.patientName,
+                    reportId: reportSnap.id,
+                    physiologicalSummary: data.physiologicalSummary,
+                    mentalHealthSummary: data.mentalHealthSummary,
+                    recommendations: data.recommendations,
+                    vitals: data.vitals,
+                    wellnessScore: data.wellnessScore,
+                    wellnessStatus: data.wellnessStatus,
+                });
+            } else {
+                setError("Report not found.");
+            }
+        } catch (err) {
+            console.error("Error fetching report:", err);
+            setError("Failed to load the report data.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchReport();
+  }, [patientId, reportId]);
+
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /> <p className="ml-2">Loading Report...</p></div>
+  }
   
-  const recommendations = safelyDecodeAndParse(recommendationsStr) || [];
-  const vitals = safelyDecodeAndParse(vitalsStr) || {};
-  const wellnessScore = wellnessScoreStr ? parseInt(wellnessScoreStr, 10) : 76;
+  if (error) {
+     return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>
+  }
   
+  if (!reportData) {
+    return <div className="flex items-center justify-center h-screen">No report data available.</div>;
+  }
+  
+  const {
+      patientName,
+      physiologicalSummary,
+      mentalHealthSummary,
+      recommendations,
+      vitals,
+      wellnessScore,
+      wellnessStatus,
+  } = reportData;
+
   const { heartRate, spo2, ecg, stress } = vitals;
   
   const mentalBoostTip = recommendations?.[0];
@@ -252,7 +309,7 @@ const RecommendationItem = ({ title, description, icon }: { title: string, descr
 
 export default function ReportPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading report...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
       <ReportContent />
     </Suspense>
   );

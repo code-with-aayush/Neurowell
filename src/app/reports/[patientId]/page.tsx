@@ -120,37 +120,39 @@ export default function ReportHistoryPage() {
                             All Generated Reports
                         </CardTitle>
                         <CardDescription>
-                            Review past reports to track progress and identify trends over time.
+                            Review past reports to track progress and identify trends over time. Click a report to view details.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {reports.length > 0 ? (
                             <div className="space-y-4">
                                 {reports.map((report) => (
-                                    <Card key={report.id} className="hover:shadow-md transition-shadow">
-                                        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-4">
-                                            <div className="flex items-center gap-3">
-                                                {getStatusIcon(report.wellnessStatus)}
-                                                <div>
-                                                    <p className="font-semibold">Wellness Report</p>
-                                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                                        <Calendar className="h-3 w-3"/> 
-                                                        {new Date(report.createdAt.seconds * 1000).toLocaleDateString()}
-                                                    </p>
+                                    <Link key={report.id} href={`/report?patientId=${patientId}&reportId=${report.id}`} passHref>
+                                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                                            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    {getStatusIcon(report.wellnessStatus)}
+                                                    <div>
+                                                        <p className="font-semibold">Wellness Report</p>
+                                                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3"/> 
+                                                            {new Date(report.createdAt.seconds * 1000).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <p className="font-medium text-sm text-gray-600">{report.physiologicalSummary}</p>
-                                            </div>
-                                            <div className="flex items-center justify-between md:justify-end gap-4">
-                                                <div className="flex flex-col items-end">
-                                                    <p className="text-sm text-muted-foreground">Score</p>
-                                                    <p className="text-2xl font-bold">{report.wellnessScore}</p>
+                                                <div className="md:col-span-2">
+                                                    <p className="font-medium text-sm text-gray-600">{report.physiologicalSummary}</p>
                                                 </div>
-                                                 <Badge className={`${statusColors[report.wellnessStatus]}`}>{report.wellnessStatus}</Badge>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                                <div className="flex items-center justify-between md:justify-end gap-4">
+                                                    <div className="flex flex-col items-end">
+                                                        <p className="text-sm text-muted-foreground">Score</p>
+                                                        <p className="text-2xl font-bold">{report.wellnessScore}</p>
+                                                    </div>
+                                                     <Badge className={`${statusColors[report.wellnessStatus]}`}>{report.wellnessStatus}</Badge>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
                                 ))}
                             </div>
                         ) : (
