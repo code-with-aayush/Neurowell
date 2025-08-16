@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import { signUpAction } from './actions';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -27,26 +28,35 @@ function SubmitButton() {
 export default function SignUpPage() {
   const [state, formAction] = useActionState(signUpAction, { success: false, error: null });
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
+    setIsClient(true);
     if (state?.success) {
       router.push('/login');
     }
   }, [state, router]);
+  
+  const authImageSrc = isClient && theme === 'dark' ? '/dark_auth_page.png' : '/auth_page.png';
+
 
   return (
     <div className="flex-grow flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md mx-auto">
              <div className="flex justify-center mb-8">
-                <Image 
-                    src="https://placehold.co/200x200.png"
-                    alt="Illustration of a professional helping a patient"
-                    width={200}
-                    height={200}
-                    className="rounded-full"
-                    data-ai-hint="professional therapy wellness"
-                    priority
-                />
+                {isClient ? (
+                  <Image 
+                      src={authImageSrc}
+                      alt="Illustration of a professional helping a patient"
+                      width={200}
+                      height={200}
+                      className="rounded-full"
+                      priority
+                  />
+                ) : (
+                    <div className="w-[200px] h-[200px] bg-muted rounded-full animate-pulse"></div>
+                )}
             </div>
             <Card className="w-full shadow-2xl bg-card border-none rounded-2xl">
                 <CardHeader className="text-center space-y-3">
