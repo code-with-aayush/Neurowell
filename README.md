@@ -1,4 +1,4 @@
-# Firebase Studio
+![alt text](neurowell_home_dark.png)# Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
 
