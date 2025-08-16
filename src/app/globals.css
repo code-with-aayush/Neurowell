@@ -37,32 +37,32 @@
   }
  
   .dark {
-    --background: 222 47% 11%; /* A sophisticated dark slate */
+    --background: 240 10% 3.9%; /* Near black */
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 14%; /* Slightly lighter slate for cards */
+    --card: 240 5.9% 10%; /* Dark gray for cards */
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 259 100% 88%; /* Keeping the light purple for primary actions */
-    --primary-foreground: 222 47% 11%;
+    --primary-foreground: 240 5.9% 10%;
 
-    --secondary: 217 33% 17%; /* A muted, complementary blue-gray */
+    --secondary: 240 3.7% 15.9%; /* Muted dark gray */
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
+    --muted: 240 3.7% 15.9%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 33% 25%; /* A slightly brighter accent for hover states */
+    --accent: 240 3.7% 15.9%; /* Accent for hover states */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
     --ring: 259 100% 88%;
   }
 }
@@ -75,5 +75,6 @@
     @apply bg-background text-foreground;
   }
 }
+
 
 
