@@ -38,8 +38,20 @@ export default function NewPatientPage() {
       router.push('/patients');
   }
 
-  if (loading || !user) {
+  if (loading) {
       return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
+  
+  if (!user) {
+    router.push('/login');
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
+
+  const handleFormAction = (formData: FormData) => {
+    if (user) {
+        formData.append('clinicianId', user.uid);
+        formAction(formData);
+    }
   }
 
   return (
@@ -62,7 +74,7 @@ export default function NewPatientPage() {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form action={formAction} className="space-y-6">
+                        <form action={handleFormAction} className="space-y-6">
                              <FormField
                                 control={form.control}
                                 name="patientName"
@@ -90,7 +102,7 @@ export default function NewPatientPage() {
                                 )}
                             />
                             {state?.error && <p className="text-sm font-medium text-destructive">{state.error}</p>}
-                            <Button type="submit" className="w-full py-3 text-base" disabled={isPending}>
+                            <Button type="submit" className="w-full py-3 text-base" disabled={isPending || !user}>
                                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Add Patient <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
