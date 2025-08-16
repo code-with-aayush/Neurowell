@@ -3,19 +3,23 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Heart, LineChart, FileText, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Users, LogOut, ArrowRight } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
   useEffect(() => {
+    setIsMounted(true);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -25,17 +29,11 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      window.location.href = '/login';
+      router.push('/login');
     } catch (error) {
       console.error('Error signing out: ', error);
     }
   };
-  
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Heart },
-    { href: '/dashboard', label: 'Dashboard', icon: LineChart },
-    { href: '/report', label: 'Report', icon: FileText },
-  ];
   
   const AuthNav = () => (
     <div className="flex items-center gap-2">
@@ -46,7 +44,47 @@ export default function Header() {
             <Link href="/signup">Sign Up</Link>
         </Button>
     </div>
-  )
+  );
+  
+  const LoggedInNav = () => (
+    <div className="flex items-center gap-2">
+      <Button asChild variant={pathname === '/patients' ? 'secondary' : 'ghost'} className="rounded-full">
+        <Link href="/patients" className="flex items-center gap-2">
+          <Users className="h-4 w-4"/>
+          My Patients
+        </Link>
+      </Button>
+      <Button variant="outline" onClick={handleLogout} className="rounded-full">
+        <LogOut className="mr-2 h-4 w-4" />
+        Logout
+      </Button>
+    </div>
+  );
+
+  const LoggedOutNav = () => (
+    <div className="hidden sm:flex items-center gap-2">
+       <Button asChild variant="ghost" className="rounded-full">
+        <Link href="/login">Login</Link>
+      </Button>
+      <Button asChild className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+        <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
+      </Button>
+    </div>
+  );
+
+  if (!isMounted) {
+    return (
+       <header className={cn("bg-background/80 backdrop-blur-sm sticky top-0 z-50", !isAuthPage && "border-b")}>
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <BrainCircuit className="h-7 w-7 text-primary" />
+            <span className="font-semibold">NeuroWell</span>
+          </Link>
+          <div className="h-10 w-24 rounded-full bg-gray-200 animate-pulse" />
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className={cn("bg-background/80 backdrop-blur-sm sticky top-0 z-50", !isAuthPage && "border-b")}>
@@ -55,34 +93,14 @@ export default function Header() {
           <BrainCircuit className="h-7 w-7 text-primary" />
           <span className="font-semibold">NeuroWell</span>
         </Link>
-        {!isAuthPage && (
-          <nav className="hidden md:flex items-center gap-2">
-            {navLinks.map((link) => (
-              <Button key={link.href} asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="rounded-full">
-                <Link href={link.href} className="flex items-center gap-2">
-                  <link.icon className="h-4 w-4"/>
-                  {link.label}
-                </Link>
-              </Button>
-            ))}
-          </nav>
-        )}
+
         <div className="flex items-center gap-2">
           {user ? (
-            <Button variant="outline" onClick={handleLogout} className="rounded-full">
-              Logout
-            </Button>
+            <LoggedInNav />
           ) : isAuthPage ? (
              <AuthNav />
           ) : (
-            <div className="hidden sm:flex items-center gap-2">
-               <Button asChild variant="ghost" className="rounded-full">
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
-                <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-            </div>
+            <LoggedOutNav />
           )}
         </div>
       </div>

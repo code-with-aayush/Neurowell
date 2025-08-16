@@ -29,7 +29,7 @@ async function login(prevState: any, formData: FormData) {
                 message = 'Incorrect password. Please try again.';
                 break;
             case 'auth/user-not-found':
-                message = 'No user found with this email. Please sign up.';
+                message = 'No account found with this email. Please sign up.';
                 break;
             case 'auth/invalid-email':
                 message = 'Please enter a valid email address.';
@@ -59,34 +59,34 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push('/dashboard');
+      router.push('/patients');
     }
   }, [state, router]);
 
   return (
     <div className="flex-grow flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-16">
-        <div className="hidden md:flex justify-center">
+      <div className="w-full max-w-md mx-auto">
+        <div className="flex justify-center mb-8">
             <Image 
                 src="/auth_page.png"
-                alt="Illustration of a person in a calm state"
-                width={400}
-                height={500}
-                className="rounded-2xl"
-                data-ai-hint="woman thinking wellness"
+                alt="Illustration of a professional helping a patient"
+                width={200}
+                height={200}
+                className="rounded-full"
+                data-ai-hint="professional therapy wellness"
                 priority
             />
         </div>
-        <Card className="w-full max-w-md shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl">
+        <Card className="w-full shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl">
           <CardHeader className="text-center space-y-3">
-            <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Welcome Back</CardTitle>
-            <CardDescription className="text-muted-foreground text-base">Sign in to continue your journey.</CardDescription>
+            <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Clinician Portal</CardTitle>
+            <CardDescription className="text-muted-foreground text-base">Sign in to access your patient dashboard.</CardDescription>
           </CardHeader>
           <CardContent className="px-8 py-6">
             <form action={formAction} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-semibold">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+                <Input id="email" name="email" type="email" placeholder="dr.jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

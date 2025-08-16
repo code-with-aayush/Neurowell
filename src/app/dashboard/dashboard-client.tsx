@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug } from 'lucide-react';
+import { Heart, Droplets, Activity, Zap, Play, StopCircle, Loader2, AlertCircle, Plug, User } from 'lucide-react';
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -29,7 +29,7 @@ const initialLatestValues = {
 
 const REQUIRED_DATA_POINTS = 5;
 
-export default function DashboardClient() {
+function DashboardClientInternal() {
   const [data, setData] = useState(initialDataState);
   const [latestValues, setLatestValues] = useState(initialLatestValues);
   const [isMonitoring, setIsMonitoring] = useState(false);
@@ -38,6 +38,9 @@ export default function DashboardClient() {
   const [showRedirectingOverlay, setShowRedirectingOverlay] = useState(false);
   
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patientId = searchParams.get('patientId');
+  const patientName = searchParams.get('patientName');
   
   const portRef = useRef<any | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
@@ -50,6 +53,13 @@ export default function DashboardClient() {
     isMonitoringRef.current = isMonitoring;
   }, [isMonitoring]);
 
+  useEffect(() => {
+    if (!patientId || !patientName) {
+      router.push('/patients');
+    }
+  }, [patientId, patientName, router]);
+
+
   const handleRedirectToQuestionnaire = (values: typeof initialLatestValues) => {
      if (values.heartRate === 0 || values.spo2 === 0 || values.ecg === 0 || values.gsr === 0) {
         setError("Cannot proceed with zero values. Please monitor again.");
@@ -58,6 +68,8 @@ export default function DashboardClient() {
     }
 
     const queryParams = new URLSearchParams({
+      patientId: patientId || '',
+      patientName: patientName || '',
       heartRate: values.heartRate.toString(),
       spo2: values.spo2.toString(),
       ecg: values.ecg.toString(),
@@ -233,12 +245,12 @@ export default function DashboardClient() {
   
   const getStatusMessage = () => {
       if (showRedirectingOverlay) {
-        return 'Monitoring complete. Preparing questionnaire...';
+        return 'Monitoring complete. Preparing patient questionnaire...';
       }
       if (isMonitoring) {
         return `Monitoring... (${nonZeroDataCountRef.current}/${REQUIRED_DATA_POINTS} valid readings)`;
       }
-      return 'Click "Start Monitoring" to begin.';
+      return 'Click "Start Monitoring" to begin a session.';
   }
 
   const isDeviceConnected = !!portRef.current;
@@ -247,6 +259,10 @@ export default function DashboardClient() {
   const chartDataSpO2 = [ { name: 'Normal', value: 97 }, { name: 'Live', value: latestValues.spo2 } ];
   const chartDataECG = [ { name: 'Normal', value: 1.0 }, { name: 'Live', value: latestValues.ecg } ];
   const chartDataGSR = [ { name: 'Normal', value: 5.0 }, { name: 'Live', value: latestValues.gsr } ];
+
+  if (!patientId || !patientName) {
+    return <div className="flex items-center justify-center h-screen w-full"><Loader2 className="h-8 w-8 animate-spin" /> <p className="ml-2">Loading Patient...</p></div>
+  }
 
   return (
     <div className="bg-background min-h-screen p-8 relative">
@@ -260,8 +276,14 @@ export default function DashboardClient() {
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Wellness & Lifestyle Dashboard</h1>
-            <p className="text-gray-500">Real-time monitoring of your vital signs and lifestyle.</p>
+            <div className="flex items-center gap-3 mb-2">
+              <User className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">{patientName}</h1>
+                <p className="text-gray-500 text-sm">Patient ID: {patientId}</p>
+              </div>
+            </div>
+            <p className="text-gray-500 ml-11">Real-time patient vitals monitoring dashboard.</p>
           </div>
           <div className="flex items-center gap-2">
              {!isDeviceConnected ? (
@@ -304,7 +326,7 @@ export default function DashboardClient() {
         <Card className="bg-primary/10 border-primary/20 mb-8">
           <CardContent className="p-4 flex justify-between items-center">
             <div>
-              <CardTitle className="text-lg font-semibold text-primary-foreground/80">Current Status</CardTitle>
+              <CardTitle className="text-lg font-semibold text-primary-foreground/80">Session Status</CardTitle>
               <CardDescription className="text-primary-foreground/70">
                 {getStatusMessage()}
               </CardDescription>
@@ -346,6 +368,14 @@ export default function DashboardClient() {
       </div>
     </div>
   );
+}
+
+export default function DashboardClient() {
+  return (
+    <Suspense>
+      <DashboardClientInternal />
+    </Suspense>
+  )
 }
 
 const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => {

@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Download, Heart, Zap, Activity, Droplets, Moon, Brain, Coffee, Footprints, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -34,26 +34,26 @@ const RecommendationIcon = ({ icon, className }: { icon: string, className?: str
     case 'mindfulness': return <Brain className={combinedClass} />;
     case 'activity': return <Footprints className={combinedClass} />;
     case 'caffeine': return <Coffee className={combinedClass} />;
-    default: return <Heart className={combinedClass} />;
+    default: return <Lightbulb className={combinedClass} />;
   }
 };
 
-// Helper function to decode Base64 string from URL safely
 const safelyDecodeAndParse = (str: string | null) => {
     if (!str) return null;
     try {
-        // Decode from Base64 to a UTF-8 string
         const decoded = Buffer.from(str, 'base64').toString('utf-8');
         return JSON.parse(decoded);
     } catch (e) {
         console.error("Failed to decode or parse string from URL:", e);
-        return null; // Return null if decoding or parsing fails
+        return null; 
     }
 }
 
 function ReportContent() {
   const searchParams = useSearchParams();
 
+  const patientId = searchParams.get('patientId');
+  const patientName = searchParams.get('patientName');
   const physiologicalSummary = searchParams.get('physiologicalSummary') || 'No summary available.';
   const mentalHealthSummary = searchParams.get('mentalHealthSummary') || 'No insights available.';
   const recommendationsStr = searchParams.get('recommendations');
@@ -71,20 +71,28 @@ function ReportContent() {
   const suggestionBoxTips = recommendations?.slice(0, 2);
   const remainingRecommendations = recommendations?.slice(1);
 
+  const dashboardUrl = patientId && patientName ? `/dashboard?patientId=${patientId}&patientName=${patientName}` : '/patients';
+
   return (
     <div className="bg-[#F8F9FA] min-h-screen p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <div className="flex flex-wrap justify-between items-center gap-4">
               <div>
-                   <Link href="/dashboard" className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary mb-4 transition-colors">
+                   <Link href={dashboardUrl} className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary mb-4 transition-colors">
                       <ArrowLeft className="h-4 w-4" />
-                      Back to Dashboard
+                      Back to Patient Dashboard
                   </Link>
                   <div className='flex justify-between items-center'>
-                     <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Mental Wellness Report</h1>
-                     <p className="text-gray-500 mt-1">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                     <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Patient Wellness Report</h1>
                   </div>
+                  {patientName && (
+                    <div className="flex items-center gap-2 mt-2 text-gray-500">
+                        <User className="h-5 w-5" />
+                        <span>{patientName} (ID: {patientId})</span>
+                        <span className="text-sm ml-4">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                  )}
               </div>
           </div>
         </header>
@@ -175,7 +183,7 @@ function ReportContent() {
                 <Card className="bg-white shadow-md rounded-xl">
                    <CardHeader>
                         <CardTitle className="text-xl font-bold text-gray-800">Recommendations</CardTitle>
-                        <CardDescription>Actionable steps to improve your well-being.</CardDescription>
+                        <CardDescription>Actionable steps for the patient's well-being.</CardDescription>
                     </CardHeader>
                    <CardContent>
                         {remainingRecommendations && remainingRecommendations.length > 0 ? (
@@ -195,7 +203,7 @@ function ReportContent() {
         <div className="mt-12 text-center">
              <Button variant="outline" onClick={() => window.print()} className="mt-2 sm:mt-0">
                   <Download className="mr-2 h-4 w-4" />
-                  Download or Print
+                  Download or Print Report
               </Button>
         </div>
       </div>

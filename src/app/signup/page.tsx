@@ -19,7 +19,7 @@ function SubmitButton() {
   return (
     <Button type="submit" disabled={pending} className="w-full text-base py-6 rounded-full transition-transform hover:scale-105">
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Get Started
+      Create Account
     </Button>
   );
 }
@@ -36,21 +36,32 @@ export default function SignUpPage() {
 
   return (
     <div className="flex-grow flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 items-center gap-16">
-            <Card className="w-full max-w-md shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl md:order-2">
+        <div className="w-full max-w-md mx-auto">
+             <div className="flex justify-center mb-8">
+                <Image 
+                    src="/auth_page.png"
+                    alt="Illustration of a professional helping a patient"
+                    width={200}
+                    height={200}
+                    className="rounded-full"
+                    data-ai-hint="professional therapy wellness"
+                    priority
+                />
+            </div>
+            <Card className="w-full shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl">
                 <CardHeader className="text-center space-y-3">
-                <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Sign Up</CardTitle>
-                <CardDescription className="text-muted-foreground text-base">Create your account to begin your journey</CardDescription>
+                <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Create Your Account</CardTitle>
+                <CardDescription className="text-muted-foreground text-base">Join NeuroWell to enhance your clinical practice.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-8 py-6">
                 <form className="space-y-6" action={formAction}>
                     <div className="space-y-2">
                     <Label htmlFor="email" className="font-semibold">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+                    <Input id="email" name="email" type="email" placeholder="dr.jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
                     </div>
                     <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+                    <Input id="password" name="password" type="password" required className="bg-white/70 rounded-full h-12 px-5 text-base" placeholder="Must be at least 6 characters"/>
                     </div>
                     {state?.error && <p className="text-sm font-medium text-destructive text-center">{state.error}</p>}
                      <div className="pt-4">
@@ -67,18 +78,7 @@ export default function SignUpPage() {
                     </p>
                 </CardFooter>
             </Card>
-            <div className="hidden md:flex justify-center md:order-1">
-                <Image 
-                    src="https://placehold.co/400x500.png"
-                    alt="Illustration of a person in a calm state"
-                    width={400}
-                    height={500}
-                    className="rounded-2xl"
-                    data-ai-hint="woman thinking wellness"
-                    priority
-                />
-            </div>
-      </div>
+        </div>
     </div>
   );
 }

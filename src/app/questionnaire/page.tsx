@@ -16,11 +16,11 @@ import { Loader2 } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const scaleQuestions = [
-    { name: "q1", label: "How often do you feel tired or lacking energy during the day?" },
-    { name: "q3", label: "How often have you felt overwhelmed or unable to cope with daily tasks?" },
-    { name: "q4", label: "Have you consumed caffeine, energy drinks, or stimulants more than usual in the last 24 hours?" },
-    { name: "q5", label: "Do you feel mentally present and focused while working or studying?" },
-    { name: "q6", label: "Have you had time to relax or do something enjoyable today?" },
+    { name: "q1", label: "How often does the patient report feeling tired or lacking energy?" },
+    { name: "q3", label: "How often has the patient felt overwhelmed or unable to cope with daily tasks?" },
+    { name: "q4", label: "Has the patient consumed caffeine or other stimulants more than usual?" },
+    { name: "q5", label: "Does the patient report feeling mentally present and focused?" },
+    { name: "q6", label: "Has the patient had time to relax or do something enjoyable?" },
 ] as const;
 
 const scaleOptions = [
@@ -30,7 +30,7 @@ const scaleOptions = [
     { value: '3', label: 'Almost every day' }
 ];
 
-const sleepQuestion = { name: "q2", label: "How many hours of quality sleep did you get last night?" } as const;
+const sleepQuestion = { name: "q2", label: "How many hours of quality sleep did the patient get last night?" } as const;
 const sleepOptions = [
     { value: '0', label: '6–8 hours' },
     { value: '1', label: 'More than 8 hours' },
@@ -45,6 +45,8 @@ const formSchema = z.object({
   q4: z.string({ required_error: "Please select an option." }),
   q5: z.string({ required_error: "Please select an option." }),
   q6: z.string({ required_error: "Please select an option." }),
+  patientId: z.string(),
+  patientName: z.string(),
   heartRate: z.number(),
   spo2: z.number(),
   ecg: z.number(),
@@ -58,6 +60,8 @@ function QuestionnaireForm() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            patientId: searchParams.get('patientId') || '',
+            patientName: searchParams.get('patientName') || '',
             heartRate: parseFloat(searchParams.get('heartRate') || '0'),
             spo2: parseFloat(searchParams.get('spo2') || '0'),
             ecg: parseFloat(searchParams.get('ecg') || '0'),
@@ -66,6 +70,7 @@ function QuestionnaireForm() {
     });
 
     const { isSubmitting } = form.formState;
+    const patientName = form.getValues('patientName');
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         const formData = new FormData();
@@ -83,20 +88,24 @@ function QuestionnaireForm() {
         }
     }
 
+    if (!patientName) {
+         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
+
     return (
         <div className="bg-background min-h-screen p-8 relative">
              {isSubmitting && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <h2 className="mt-4 text-xl font-semibold text-gray-700">Generating Your Personalized Report...</h2>
+                    <h2 className="mt-4 text-xl font-semibold text-gray-700">Generating Patient Report...</h2>
                     <p className="text-gray-500">This may take a moment.</p>
                 </div>
             )}
             <div className="max-w-3xl mx-auto">
                 <Card className="shadow-lg">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-bold">Mental Wellness & Lifestyle Assessment</CardTitle>
-                        <CardDescription>Your answers will be combined with your sensor data to create a more accurate and personalized wellness report.</CardDescription>
+                        <CardTitle className="text-2xl font-bold">Patient Lifestyle Assessment</CardTitle>
+                        <CardDescription>These answers provide context for {patientName}'s biometric data to generate a personalized wellness report.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Form {...form}>
@@ -162,7 +171,7 @@ function QuestionnaireForm() {
 
                                 <Button type="submit" className="w-full !mt-10 py-3 text-lg" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Generate My Report
+                                    Generate Patient Report
                                 </Button>
                             </form>
                         </Form>

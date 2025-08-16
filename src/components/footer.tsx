@@ -12,14 +12,14 @@ export default function Footer() {
               <BrainCircuit className="h-7 w-7 text-primary" />
               <span className="font-semibold">NeuroWell</span>
             </Link>
-            <p className="text-muted-foreground text-sm">Your mental wellness & lifestyle monitor.</p>
+            <p className="text-muted-foreground text-sm">Clinical monitoring for mental wellness professionals.</p>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">Product</h4>
+            <h4 className="font-semibold mb-4">Platform</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="#" className="text-muted-foreground hover:text-primary">Features</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
-              <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">For Clinicians</Link></li>
+              <li><Link href="/patients" className="text-muted-foreground hover:text-primary">Patient Portal</Link></li>
             </ul>
           </div>
           <div>
@@ -39,7 +39,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} NeuroWell.</p>
+          <p>&copy; {new Date().getFullYear()} NeuroWell. For professional use only.</p>
         </div>
       </div>
     </footer>

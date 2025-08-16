@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -16,8 +17,10 @@ export async function signUpAction(prevState: any, formData: FormData): Promise<
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    await setDoc(doc(db, 'users', user.uid), {
+    // Create a document in a 'professionals' collection
+    await setDoc(doc(db, 'professionals', user.uid), {
       email: user.email,
+      createdAt: new Date(),
     });
     return { success: true, error: null };
   } catch (error: any) {
@@ -25,7 +28,7 @@ export async function signUpAction(prevState: any, formData: FormData): Promise<
     if (error.code) {
         switch (error.code) {
             case 'auth/email-already-in-use':
-                message = 'This email is already in use. Please login.';
+                message = 'This email is already registered. Please log in.';
                 break;
             case 'auth/invalid-email':
                 message = 'Please enter a valid email address.';

@@ -13,6 +13,8 @@ export async function createReportWithQuestions(
     const spo2 = parseFloat(formData.get('spo2') as string);
     const ecg = parseFloat(formData.get('ecg') as string);
     const gsr = parseFloat(formData.get('gsr') as string);
+    const patientId = formData.get('patientId') as string;
+    const patientName = formData.get('patientName') as string;
     
     const answers = {
         q1: parseInt(formData.get('q1') as string, 10),
@@ -23,7 +25,7 @@ export async function createReportWithQuestions(
         q6: parseInt(formData.get('q6') as string, 10),
     }
 
-    if (!heartRate || !spo2 || !ecg || !gsr || Object.values(answers).some(v => isNaN(v))) {
+    if (!heartRate || !spo2 || !ecg || !gsr || !patientId || !patientName || Object.values(answers).some(v => isNaN(v))) {
       return {
         success: false,
         message: 'Missing required fields to generate a report.',
@@ -39,6 +41,8 @@ export async function createReportWithQuestions(
     });
   
     const params = new URLSearchParams();
+    params.set('patientId', patientId);
+    params.set('patientName', patientName);
     params.set('wellnessScore', report.wellnessScore.toString());
     params.set('wellnessStatus', report.wellnessStatus);
     params.set('physiologicalSummary', report.physiologicalSummary);
