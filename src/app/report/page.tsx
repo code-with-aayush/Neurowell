@@ -11,15 +11,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const statusColors = {
-  Good: 'text-green-600 bg-green-100',
-  Moderate: 'text-yellow-600 bg-yellow-100',
-  'Needs Attention': 'text-red-600 bg-red-100',
-  Low: 'text-green-600',
-  High: 'text-red-600',
-  Normal: 'bg-green-100 text-green-800',
-  Elevated: 'bg-yellow-100 text-yellow-800',
-  'Slightly Low': 'bg-blue-100 text-blue-800',
-  default: 'bg-gray-100 text-gray-800',
+  Good: 'text-green-600 bg-green-100 dark:text-green-300 dark:bg-green-900/50',
+  Moderate: 'text-yellow-600 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/50',
+  'Needs Attention': 'text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/50',
+  Low: 'text-green-600 dark:text-green-300',
+  High: 'text-red-600 dark:text-red-300',
+  Normal: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+  Elevated: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+  'Slightly Low': 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
+  default: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
 };
 
 const getStatusColorClass = (status?: string) => {
@@ -132,20 +132,20 @@ function ReportContent() {
   const dashboardUrl = patientId && patientName ? `/dashboard?patientId=${patientId}&patientName=${patientName}` : '/patients';
 
   return (
-    <div className="bg-[#F8F9FA] min-h-screen p-4 sm:p-6 md:p-8">
+    <div className="bg-background min-h-screen p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <div className="flex flex-wrap justify-between items-center gap-4">
               <div>
-                   <Link href={dashboardUrl} className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary mb-4 transition-colors">
+                   <Link href={dashboardUrl} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4 transition-colors">
                       <ArrowLeft className="h-4 w-4" />
                       Back to Patient Dashboard
                   </Link>
                   <div className='flex justify-between items-center'>
-                     <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Patient Wellness Report</h1>
+                     <h1 className="text-3xl md:text-4xl font-bold text-foreground">Patient Wellness Report</h1>
                   </div>
                   {patientName && (
-                    <div className="flex items-center gap-2 mt-2 text-gray-500">
+                    <div className="flex items-center gap-2 mt-2 text-muted-foreground">
                         <User className="h-5 w-5" />
                         <span>{patientName} (ID: {patientId})</span>
                         <span className="text-sm ml-4">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -170,7 +170,7 @@ function ReportContent() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Left Column */}
             <div className="lg:col-span-3 space-y-8">
-                 <Card className="bg-white shadow-md rounded-xl">
+                 <Card className="bg-card shadow-md rounded-xl">
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                         <div className="flex flex-col items-center justify-center">
                             <div className="relative h-48 w-48">
@@ -181,7 +181,7 @@ function ReportContent() {
                                             <stop offset="100%" stopColor="#B3E283" />
                                         </linearGradient>
                                     </defs>
-                                    <circle cx="50" cy="50" r="45" stroke="#E5E7EB" strokeWidth="10" fill="none" />
+                                    <circle cx="50" cy="50" r="45" stroke="hsl(var(--border))" strokeWidth="10" fill="none" />
                                     <circle 
                                         cx="50" cy="50" r="45" 
                                         stroke="url(#gradient)" strokeWidth="10" fill="none" 
@@ -192,11 +192,11 @@ function ReportContent() {
                                     />
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <p className="text-5xl font-bold text-gray-800">{wellnessScore}</p>
+                                    <p className="text-5xl font-bold text-foreground">{wellnessScore}</p>
                                 </div>
                             </div>
                             <span className={`mt-4 px-4 py-1.5 text-sm font-semibold rounded-full ${getStatusColorClass(wellnessStatus)}`}>{wellnessStatus}</span>
-                            <div className="text-gray-600 mt-4 text-center space-y-1">
+                            <div className="text-muted-foreground mt-4 text-center space-y-1">
                                 <p>{physiologicalSummary}</p>
                                 <p>{mentalHealthSummary}</p>
                             </div>
@@ -213,16 +213,16 @@ function ReportContent() {
                                         <RecommendationItem key={index} {...tip} />
                                     ))
                                 ) : (
-                                    <p className="text-sm text-gray-600">No immediate suggestions. Keep up the good work!</p>
+                                    <p className="text-sm text-muted-foreground">No immediate suggestions. Keep up the good work!</p>
                                 )}
                             </div>
                         </Card>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white shadow-md rounded-xl">
+                <Card className="bg-card shadow-md rounded-xl">
                     <CardHeader>
-                        <CardTitle className="text-xl font-bold text-gray-800">Physiological Summary</CardTitle>
+                        <CardTitle className="text-xl font-bold text-foreground">Physiological Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
                         <PhysiologicalStat title="Heart Rate" data={heartRate} />
@@ -236,9 +236,9 @@ function ReportContent() {
             {/* Right Column */}
             <div className="lg:col-span-2 space-y-8">
                 {mentalBoostTip && (
-                <Card className="bg-white shadow-md rounded-xl">
+                <Card className="bg-card shadow-md rounded-xl">
                    <CardHeader>
-                        <CardTitle className="text-xl font-bold text-gray-800">Today’s Mental Boost Tip</CardTitle>
+                        <CardTitle className="text-xl font-bold text-foreground">Today’s Mental Boost Tip</CardTitle>
                     </CardHeader>
                    <CardContent>
                         <RecommendationItem 
@@ -250,9 +250,9 @@ function ReportContent() {
                 </Card>
                 )}
                 
-                <Card className="bg-white shadow-md rounded-xl">
+                <Card className="bg-card shadow-md rounded-xl">
                    <CardHeader>
-                        <CardTitle className="text-xl font-bold text-gray-800">Recommendations</CardTitle>
+                        <CardTitle className="text-xl font-bold text-foreground">Recommendations</CardTitle>
                         <CardDescription>Actionable steps for the patient's well-being.</CardDescription>
                     </CardHeader>
                    <CardContent>
@@ -263,7 +263,7 @@ function ReportContent() {
                                ))}
                            </div>
                         ) : (
-                            <p className="text-gray-500">No further recommendations for today.</p>
+                            <p className="text-muted-foreground">No further recommendations for today.</p>
                         )}
                    </CardContent>
                </Card>
@@ -284,10 +284,10 @@ function ReportContent() {
 const PhysiologicalStat = ({ title, data }: { title: string, data?: { value: string, status: string }}) => {
     if (!data) return null;
     return (
-        <div className="flex justify-between items-center py-2 border-b">
+        <div className="flex justify-between items-center py-2 border-b border-border">
             <div>
-                <p className="text-sm text-gray-500">{title}</p>
-                <p className="text-2xl font-bold text-gray-800">{data.value}</p>
+                <p className="text-sm text-muted-foreground">{title}</p>
+                <p className="text-2xl font-bold text-foreground">{data.value}</p>
             </div>
             <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusColorClass(data.status)}`}>{data.status}</span>
         </div>
@@ -300,8 +300,8 @@ const RecommendationItem = ({ title, description, icon }: { title: string, descr
             <RecommendationIcon icon={icon} />
         </div>
         <div className="flex-1">
-            <h4 className="font-semibold text-gray-800 text-lg">{title}</h4>
-            <p className="text-sm text-gray-600">{description}</p>
+            <h4 className="font-semibold text-foreground text-lg">{title}</h4>
+            <p className="text-sm text-muted-foreground">{description}</p>
         </div>
     </div>
 )
@@ -314,3 +314,5 @@ export default function ReportPage() {
     </Suspense>
   );
 }
+
+    

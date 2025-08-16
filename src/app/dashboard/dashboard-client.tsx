@@ -267,10 +267,10 @@ function DashboardClientInternal() {
   return (
     <div className="bg-background min-h-screen p-8 relative">
        {showRedirectingOverlay && (
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <h2 className="mt-4 text-xl font-semibold text-gray-700">Analyzing Data & Preparing Questionnaire...</h2>
-          <p className="text-gray-500">Please wait. This will take about 5 seconds.</p>
+          <h2 className="mt-4 text-xl font-semibold text-foreground">Analyzing Data & Preparing Questionnaire...</h2>
+          <p className="text-muted-foreground">Please wait. This will take about 5 seconds.</p>
         </div>
       )}
       <div className="max-w-7xl mx-auto">
@@ -279,11 +279,11 @@ function DashboardClientInternal() {
             <div className="flex items-center gap-3 mb-2">
               <User className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">{patientName}</h1>
-                <p className="text-gray-500 text-sm">Patient ID: {patientId}</p>
+                <h1 className="text-3xl font-bold text-foreground">{patientName}</h1>
+                <p className="text-muted-foreground text-sm">Patient ID: {patientId}</p>
               </div>
             </div>
-            <p className="text-gray-500 ml-11">Real-time patient vitals monitoring dashboard.</p>
+            <p className="text-muted-foreground ml-11">Real-time patient vitals monitoring dashboard.</p>
           </div>
           <div className="flex items-center gap-2">
              {!isDeviceConnected ? (
@@ -312,12 +312,12 @@ function DashboardClientInternal() {
         </header>
 
          {error && (
-          <Card className="bg-red-50 border-red-200 mb-8">
+          <Card className="bg-red-50 border-red-200 dark:bg-destructive/20 dark:border-destructive/30 mb-8">
             <CardContent className="p-4 flex items-center gap-3">
-              <AlertCircle className="text-red-600" />
+              <AlertCircle className="text-red-600 dark:text-destructive-foreground" />
               <div>
-                <CardTitle className="text-base font-semibold text-red-800">An Error Occurred</CardTitle>
-                <CardDescription className="text-red-600">{error}</CardDescription>
+                <CardTitle className="text-base font-semibold text-red-800 dark:text-destructive-foreground">An Error Occurred</CardTitle>
+                <CardDescription className="text-red-600 dark:text-destructive-foreground/80">{error}</CardDescription>
               </div>
             </CardContent>
           </Card>
@@ -333,17 +333,17 @@ function DashboardClientInternal() {
             </div>
             <div className="flex items-center gap-4">
                {isDeviceConnected ? (
-                <div className="flex items-center gap-2 text-green-600 bg-green-100 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="flex items-center gap-2 text-green-600 bg-green-100 dark:bg-green-900/50 dark:text-green-300 px-3 py-1 rounded-full text-sm font-medium">
                   <Plug size={16} />
                   <span>Connected</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="flex items-center gap-2 text-red-600 bg-red-100 dark:bg-red-900/50 dark:text-red-300 px-3 py-1 rounded-full text-sm font-medium">
                   <AlertCircle size={16} />
                   <span>Disconnected</span>
                 </div>
               )}
-               <div className="flex items-center gap-2 text-gray-600 bg-gray-200 px-3 py-1 rounded-full text-sm font-medium">
+               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                 <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
                 <span>{isMonitoring ? 'Monitoring Active' : 'Monitoring Paused'}</span>
               </div>
@@ -380,21 +380,21 @@ export default function DashboardClient() {
 
 const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => {
   return (
-    <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
+    <Card className="bg-card shadow-sm hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-lg">
               <Icon className="h-6 w-6 text-primary" />
             </div>
-            <p className="text-gray-500">{title}</p>
+            <p className="text-muted-foreground">{title}</p>
           </div>
         </div>
         {isLoading ? (
           <Skeleton className="h-8 w-3/4 mt-1" />
         ) : (
-          <div className="text-3xl font-bold text-gray-800">
-            {value} <span className="text-lg font-medium text-gray-500">{unit}</span>
+          <div className="text-3xl font-bold text-foreground">
+            {value} <span className="text-lg font-medium text-muted-foreground">{unit}</span>
           </div>
         )}
       </CardContent>
@@ -405,17 +405,17 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: an
 
 const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => {
     return (
-    <Card className="bg-white shadow-sm hover:shadow-lg transition-shadow">
+    <Card className="bg-card shadow-sm hover:shadow-lg transition-shadow">
         <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-700">{title}</CardTitle>
+            <CardTitle className="text-lg font-semibold text-card-foreground">{title}</CardTitle>
         </CardHeader>
         <CardContent>
             <div className="h-[200px] w-full">
                 <ChartContainer config={{}} className="w-full h-full">
                     <BarChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                        <YAxis type="number" domain={domain} tick={{ fontSize: 12 }} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
+                        <YAxis type="number" domain={domain} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
                         <Tooltip
                             content={<ChartTooltipContent indicator="dot" />}
                         />
@@ -431,3 +431,5 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
     </Card>
     );
 };
+
+    

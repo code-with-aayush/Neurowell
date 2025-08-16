@@ -64,14 +64,14 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-card">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">A Seamless Workflow for Clinicians</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-12">
             Integrate objective data into your practice with a simple, three-step process designed for clinical efficiency.
           </p>
           <div className="grid md:grid-cols-3 gap-8 text-left">
-            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow bg-background">
               <div className="flex items-center justify-between mb-4">
                 <BarChart className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">1</div>
@@ -79,7 +79,7 @@ export default function Home() {
               <h3 className="text-xl font-semibold mb-2">Monitor Patient Vitals</h3>
               <p className="text-muted-foreground">The patient uses the NeuroWell device to capture key biometrics like heart rate, GSR, and ECG during their daily life.</p>
             </Card>
-            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow bg-background">
                <div className="flex items-center justify-between mb-4">
                 <FileText className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">2</div>
@@ -87,7 +87,7 @@ export default function Home() {
               <h3 className="text-xl font-semibold mb-2">Contextualize with Questionnaires</h3>
               <p className="text-muted-foreground">Patients complete brief, guided questionnaires to provide lifestyle context to their biometric data.</p>
             </Card>
-            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="p-6 shadow-lg hover:shadow-xl transition-shadow bg-background">
                <div className="flex items-center justify-between mb-4">
                 <Cpu className="h-8 w-8 text-primary" />
                 <div className="text-2xl font-bold text-primary bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center">3</div>
@@ -107,28 +107,28 @@ export default function Home() {
             Our platform provides the tools you need to deliver data-informed care.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-card">
               <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <BarChart className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">Longitudinal Tracking</h3>
               <p className="text-sm text-muted-foreground">Monitor patient progress and treatment efficacy over time.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-card">
                <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <FileText className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">Objective Data</h3>
               <p className="text-sm text-muted-foreground">Supplement subjective reports with verifiable biometric signals.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-card">
                <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <Cpu className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">AI-Powered Summaries</h3>
               <p className="text-sm text-muted-foreground">Save time with reports that highlight key trends and insights.</p>
             </Card>
-            <Card className="p-6 text-center hover:scale-105 transition-transform bg-white">
+            <Card className="p-6 text-center hover:scale-105 transition-transform bg-card">
               <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
                 <ShieldCheck className="h-8 w-8 text-primary" />
               </div>
@@ -140,7 +140,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-card">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Elevate Your Patient Care Today</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
@@ -154,3 +154,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

@@ -95,10 +95,10 @@ function QuestionnaireForm() {
     return (
         <div className="bg-background min-h-screen p-8 relative">
              {isSubmitting && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <h2 className="mt-4 text-xl font-semibold text-gray-700">Generating Patient Report...</h2>
-                    <p className="text-gray-500">This may take a moment.</p>
+                    <h2 className="mt-4 text-xl font-semibold text-foreground">Generating Patient Report...</h2>
+                    <p className="text-muted-foreground">This may take a moment.</p>
                 </div>
             )}
             <div className="max-w-3xl mx-auto">
@@ -116,7 +116,7 @@ function QuestionnaireForm() {
                                         control={form.control}
                                         name={q.name}
                                         render={({ field }) => (
-                                            <FormItem className="space-y-3 p-4 border rounded-lg bg-white">
+                                            <FormItem className="space-y-3 p-4 border rounded-lg bg-background">
                                                 <FormLabel className="font-semibold">{index + 1}. {q.label}</FormLabel>
                                                 <FormControl>
                                                     <RadioGroup
@@ -125,7 +125,7 @@ function QuestionnaireForm() {
                                                         className="!mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
                                                     >
                                                         {scaleOptions.map(option => (
-                                                            <FormItem key={option.value} className="flex items-center space-x-2 p-3 rounded-md bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">
+                                                            <FormItem key={option.value} className="flex items-center space-x-2 p-3 rounded-md bg-muted/50 border border-border hover:bg-muted transition-colors">
                                                                 <FormControl>
                                                                     <RadioGroupItem value={option.value} id={`${q.name}-${option.value}`} />
                                                                 </FormControl>
@@ -144,7 +144,7 @@ function QuestionnaireForm() {
                                     control={form.control}
                                     name={sleepQuestion.name}
                                     render={({ field }) => (
-                                        <FormItem className="space-y-3 p-4 border rounded-lg bg-white">
+                                        <FormItem className="space-y-3 p-4 border rounded-lg bg-background">
                                             <FormLabel className="font-semibold">{scaleQuestions.length + 1}. {sleepQuestion.label}</FormLabel>
                                             <FormControl>
                                                 <RadioGroup
@@ -153,7 +153,7 @@ function QuestionnaireForm() {
                                                     className="!mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
                                                 >
                                                     {sleepOptions.map(option => (
-                                                        <FormItem key={option.value} className="flex items-center space-x-2 p-3 rounded-md bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors">
+                                                        <FormItem key={option.value} className="flex items-center space-x-2 p-3 rounded-md bg-muted/50 border border-border hover:bg-muted transition-colors">
                                                             <FormControl>
                                                                 <RadioGroupItem value={option.value} id={`${sleepQuestion.name}-${option.value}`} />
                                                             </FormControl>
@@ -189,3 +189,5 @@ export default function QuestionnairePage() {
         </Suspense>
     )
 }
+
+    

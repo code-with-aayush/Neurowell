@@ -48,7 +48,7 @@ export default function SignUpPage() {
                     priority
                 />
             </div>
-            <Card className="w-full shadow-2xl bg-white/80 backdrop-blur-sm border-none rounded-2xl">
+            <Card className="w-full shadow-2xl bg-card border-none rounded-2xl">
                 <CardHeader className="text-center space-y-3">
                 <CardTitle className="text-4xl font-bold tracking-tight text-foreground">Create Your Account</CardTitle>
                 <CardDescription className="text-muted-foreground text-base">Join NeuroWell to enhance your clinical practice.</CardDescription>
@@ -57,11 +57,11 @@ export default function SignUpPage() {
                 <form className="space-y-6" action={formAction}>
                     <div className="space-y-2">
                     <Label htmlFor="email" className="font-semibold">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="dr.jane@example.com" required className="bg-white/70 rounded-full h-12 px-5 text-base"/>
+                    <Input id="email" name="email" type="email" placeholder="dr.jane@example.com" required className="bg-background rounded-full h-12 px-5 text-base"/>
                     </div>
                     <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required className="bg-white/70 rounded-full h-12 px-5 text-base" placeholder="Must be at least 6 characters"/>
+                    <Input id="password" name="password" type="password" required className="bg-background rounded-full h-12 px-5 text-base" placeholder="Must be at least 6 characters"/>
                     </div>
                     {state?.error && <p className="text-sm font-medium text-destructive text-center">{state.error}</p>}
                      <div className="pt-4">
@@ -82,3 +82,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
