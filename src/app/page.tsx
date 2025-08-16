@@ -26,7 +26,7 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  const handleGetStartedRedirect = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleGetStartedRedirect = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
     e.preventDefault();
     if (user) {
       router.push('/patients');
@@ -35,7 +35,7 @@ export default function Home() {
     }
   };
 
-  const heroImageSrc = theme === 'dark' ? '/neurowell_home_dark.png' : '/neurowell_home.png';
+  const heroImageSrc = theme === 'dark' ? '/dark_neurowell_home.png' : '/neurowell_home.png';
 
   return (
     <div className="bg-background text-foreground">
@@ -52,7 +52,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
-                <Link href="/patients" onClick={handleGetStartedRedirect}>Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link href={user ? '/patients' : '/login'} onClick={handleGetStartedRedirect}>Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function Home() {
             Join the growing community of clinicians using NeuroWell to provide deeper, more effective mental healthcare.
           </p>
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-6 text-base font-semibold">
-            <Link href="/patients" onClick={handleGetStartedRedirect}>Start Monitoring Patients <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link href={user ? '/patients' : '/login'} onClick={handleGetStartedRedirect}>Start Monitoring Patients <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
