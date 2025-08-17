@@ -11,10 +11,7 @@ export default function Footer() {
                  <span className="font-bold text-lg text-foreground">NeuroWell</span>
             </div>
           <p className="text-sm text-muted-foreground">
-            A Hackathon Project for Advanced Patient Monitoring.
-          </p>
-           <p className="text-sm text-muted-foreground mt-2 md:mt-0">
-            © 2024. All Rights Reserved.
+            Prototype version for demonstration purposes.
           </p>
         </div>
       </div>
