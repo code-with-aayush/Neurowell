@@ -38,12 +38,12 @@ export default function Header() {
   
   const AuthNav = () => (
     <div className="flex items-center gap-2">
-        <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/login' && 'font-bold')}>
-            <Link href="/login">Log in</Link>
-        </Button>
-        <Button asChild className={cn("rounded-full", pathname === '/signup' ? 'bg-primary text-primary-foreground' : 'bg-white/50 text-primary')}>
-            <Link href="/signup">Sign Up</Link>
-        </Button>
+      <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/login' && 'bg-muted font-bold')}>
+        <Link href="/login">Log in</Link>
+      </Button>
+      <Button asChild className={cn("rounded-full", pathname === '/signup' && 'bg-muted font-bold')}>
+        <Link href="/signup">Sign Up</Link>
+      </Button>
     </div>
   );
   
@@ -102,13 +102,15 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {user ? (
-            <LoggedInNav />
-          ) : isAuthPage ? (
-             <AuthNav />
-          ) : (
-            <LoggedOutNav />
-          )}
+          <div className="flex-grow">
+            {user ? (
+              <LoggedInNav />
+            ) : isAuthPage ? (
+              <AuthNav />
+            ) : (
+              <LoggedOutNav />
+            )}
+          </div>
           <ThemeToggle />
         </div>
       </div>
