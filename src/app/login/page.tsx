@@ -49,7 +49,7 @@ function SubmitButton() {
   return (
     <Button type="submit" disabled={pending} className="w-full text-base py-6 rounded-full transition-transform hover:scale-105">
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Sign In
+      Login
     </Button>
   );
 }
