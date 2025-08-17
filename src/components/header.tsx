@@ -41,7 +41,7 @@ export default function Header() {
       <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/login' && 'bg-muted font-bold')}>
         <Link href="/login">Log in</Link>
       </Button>
-      <Button asChild className={cn("rounded-full", pathname === '/signup' && 'bg-muted font-bold')}>
+      <Button asChild variant="ghost" className={cn("rounded-full", pathname === '/signup' && 'bg-muted font-bold')}>
         <Link href="/signup">Sign Up</Link>
       </Button>
     </div>
@@ -73,7 +73,7 @@ export default function Header() {
        <Button asChild variant="ghost" className="rounded-full">
         <Link href="/login">Login</Link>
       </Button>
-      <Button asChild className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+      <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
         <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
       </Button>
     </div>
@@ -87,7 +87,7 @@ export default function Header() {
             <BrainCircuit className="h-7 w-7 text-primary" />
             <span className="font-semibold">NeuroWell</span>
           </Link>
-          <div className="h-10 w-24 rounded-full bg-gray-200 animate-pulse" />
+          <div className="h-10 w-24 rounded-full bg-muted animate-pulse" />
         </div>
       </header>
     );
