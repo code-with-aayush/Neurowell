@@ -63,7 +63,7 @@ export default function LoginPage() {
   useEffect(() => {
     setIsClient(true);
     if (state?.success) {
-      router.push('/patients');
+      router.push('/');
     }
   }, [state, router]);
 
