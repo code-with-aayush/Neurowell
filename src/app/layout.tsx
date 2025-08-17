@@ -5,7 +5,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/header';
-import Footer from '@/components/footer';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider } from '@/components/theme-provider';
 
@@ -15,7 +14,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const showFooter = !['/login', '/signup', '/patients'].includes(pathname);
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
@@ -38,7 +36,6 @@ export default function RootLayout({
             <main className="flex-grow">
               {children}
             </main>
-            {showFooter && <Footer />}
           </div>
           <Toaster />
         </ThemeProvider>
