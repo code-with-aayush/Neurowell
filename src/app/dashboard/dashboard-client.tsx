@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -378,7 +378,7 @@ export default function DashboardClient() {
   )
 }
 
-const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => {
+const VitalSignCard = memo(({ icon: Icon, title, value, unit, isLoading }: { icon: any, title: string, value: string | number, unit: string, isLoading: boolean }) => {
   return (
     <Card className="bg-card shadow-sm hover:shadow-lg transition-shadow">
       <CardContent className="p-4">
@@ -400,10 +400,11 @@ const VitalSignCard = ({ icon: Icon, title, value, unit, isLoading }: { icon: an
       </CardContent>
     </Card>
   );
-};
+});
+VitalSignCard.displayName = 'VitalSignCard';
 
 
-const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => {
+const ChartCard = memo(({ title, data, dataKey, domain }: { title: string, data: any[], dataKey: string, domain: [number, number] }) => {
     return (
     <Card className="bg-card shadow-sm hover:shadow-lg transition-shadow">
         <CardHeader>
@@ -430,6 +431,5 @@ const ChartCard = ({ title, data, dataKey, domain }: { title: string, data: any[
         </CardContent>
     </Card>
     );
-};
-
-    
+});
+ChartCard.displayName = 'ChartCard';

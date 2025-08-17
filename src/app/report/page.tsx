@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Download, User, Moon, Brain, Coffee, Footprints, Lightbulb, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, memo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -281,7 +281,7 @@ function ReportContent() {
   );
 }
 
-const PhysiologicalStat = ({ title, data }: { title: string, data?: { value: string, status: string }}) => {
+const PhysiologicalStat = memo(({ title, data }: { title: string, data?: { value: string, status: string }}) => {
     if (!data) return null;
     return (
         <div className="flex justify-between items-center py-2 border-b border-border">
@@ -292,9 +292,10 @@ const PhysiologicalStat = ({ title, data }: { title: string, data?: { value: str
             <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusColorClass(data.status)}`}>{data.status}</span>
         </div>
     )
-}
+});
+PhysiologicalStat.displayName = 'PhysiologicalStat';
 
-const RecommendationItem = ({ title, description, icon }: { title: string, description: string, icon: string }) => (
+const RecommendationItem = memo(({ title, description, icon }: { title: string, description: string, icon: string }) => (
     <div className="flex items-start gap-4">
         <div className="text-primary bg-primary/10 p-3 rounded-full mt-1">
             <RecommendationIcon icon={icon} />
@@ -304,7 +305,8 @@ const RecommendationItem = ({ title, description, icon }: { title: string, descr
             <p className="text-sm text-muted-foreground">{description}</p>
         </div>
     </div>
-)
+));
+RecommendationItem.displayName = 'RecommendationItem';
 
 
 export default function ReportPage() {
@@ -314,5 +316,3 @@ export default function ReportPage() {
     </Suspense>
   );
 }
-
-    
