@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/header';
+import Footer from '@/components/footer';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider } from '@/components/theme-provider';
 
@@ -36,6 +37,7 @@ export default function RootLayout({
             <main className="flex-grow">
               {children}
             </main>
+            <Footer />
           </div>
           <Toaster />
         </ThemeProvider>
