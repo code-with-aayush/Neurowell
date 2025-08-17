@@ -5,12 +5,15 @@ import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter, useParams } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, getDoc, doc } from 'firebase/firestore';
-import { Loader2, ArrowLeft, FileText, Calendar, LineChart, CheckCircle, AlertTriangle, Activity } from 'lucide-react';
+import { collection, query, where, onSnapshot, orderBy, getDoc, doc, deleteDoc } from 'firebase/firestore';
+import { Loader2, ArrowLeft, FileText, Calendar, LineChart, CheckCircle, AlertTriangle, Activity, Trash2, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
+import { deleteReportAction } from './actions';
 
 interface Report {
   id: string;
@@ -21,6 +24,7 @@ interface Report {
   wellnessScore: number;
   wellnessStatus: string;
   physiologicalSummary: string;
+  mentalHealthSummary: string;
 }
 
 interface Patient {
@@ -51,6 +55,7 @@ export default function ReportHistoryPage() {
     const [patient, setPatient] = useState<Patient | null>(null);
     const [reports, setReports] = useState<Report[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -94,6 +99,17 @@ export default function ReportHistoryPage() {
             return () => unsubscribe();
         }
     }, [user, patientId, router]);
+
+    const handleDeleteReport = async (reportId: string) => {
+        setIsDeleting(reportId);
+        const result = await deleteReportAction({ patientId, reportId });
+        if (result.success) {
+            toast({ title: "Success", description: "Report deleted successfully." });
+        } else {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+        setIsDeleting(null);
+    }
     
     if (loading || isLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -127,9 +143,9 @@ export default function ReportHistoryPage() {
                         {reports.length > 0 ? (
                             <div className="space-y-4">
                                 {reports.map((report) => (
-                                    <Link key={report.id} href={`/report?patientId=${patientId}&reportId=${report.id}`} passHref>
-                                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                                            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-4">
+                                    <Card key={report.id} className="hover:shadow-md transition-shadow group">
+                                        <CardContent className="p-4 flex items-center gap-4">
+                                            <Link href={`/report?patientId=${patientId}&reportId=${report.id}`} className="flex-grow grid grid-cols-1 md:grid-cols-4 items-center gap-4">
                                                 <div className="flex items-center gap-3">
                                                     {getStatusIcon(report.wellnessStatus)}
                                                     <div>
@@ -141,18 +157,40 @@ export default function ReportHistoryPage() {
                                                     </div>
                                                 </div>
                                                 <div className="md:col-span-2">
-                                                    <p className="font-medium text-sm text-gray-600">{report.physiologicalSummary}</p>
+                                                    <p className="font-medium text-sm text-foreground/80">{report.physiologicalSummary}</p>
+                                                    <p className="font-medium text-sm text-foreground/80 italic mt-1">{report.mentalHealthSummary}</p>
                                                 </div>
-                                                <div className="flex items-center justify-between md:justify-end gap-4">
+                                                <div className="flex items-center justify-end gap-4">
                                                     <div className="flex flex-col items-end">
                                                         <p className="text-sm text-muted-foreground">Score</p>
                                                         <p className="text-2xl font-bold">{report.wellnessScore}</p>
                                                     </div>
                                                      <Badge className={`${statusColors[report.wellnessStatus]}`}>{report.wellnessStatus}</Badge>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </Link>
+                                            </Link>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" disabled={isDeleting === report.id}>
+                                                        {isDeleting === report.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert/>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                          This action cannot be undone. This will permanently delete this report generated on {new Date(report.createdAt.seconds * 1000).toLocaleDateString()}.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteReport(report.id)} className="bg-destructive hover:bg-destructive/90">
+                                                            Yes, delete report
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </CardContent>
+                                    </Card>
                                 ))}
                             </div>
                         ) : (

@@ -4,12 +4,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc, writeBatch } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { Loader2, Users, ArrowRight, UserPlus, FileText } from 'lucide-react';
+import { Loader2, Users, ArrowRight, UserPlus, FileText, Trash2, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
+import { deletePatientAction } from './actions';
 
 interface Patient {
     id: string; // Document ID
@@ -23,6 +26,8 @@ export default function PatientListPage() {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoadingPatients, setIsLoadingPatients] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -48,6 +53,23 @@ export default function PatientListPage() {
     }
   }, [user]);
   
+  const handleDeletePatient = async (patientId: string) => {
+      if (!user) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to delete a patient.' });
+          return;
+      }
+      setIsDeleting(patientId);
+
+      const result = await deletePatientAction({ patientId, clinicianId: user.uid });
+
+      if (result.success) {
+          toast({ title: 'Success', description: 'Patient and all associated reports have been deleted.' });
+      } else {
+          toast({ variant: 'destructive', title: 'Error', description: result.error });
+      }
+      setIsDeleting(null);
+  }
+
   if (loading || !user) {
       return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
@@ -85,23 +107,44 @@ export default function PatientListPage() {
                         <div className="space-y-4">
                             {patients.map((patient) => (
                                 <Card key={patient.id} className="hover:shadow-md transition-shadow">
-                                    <CardContent className="p-4 flex items-center justify-between">
+                                    <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div>
                                             <p className="font-semibold text-lg">{patient.patientName}</p>
                                             <p className="text-sm text-muted-foreground">ID: {patient.patientId}</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="outline" asChild>
+                                        <div className="flex items-center gap-2 self-end sm:self-center">
+                                            <Button variant="outline" asChild size="sm">
                                                 <Link href={`/reports/${patient.id}`}>
                                                      <FileText className="mr-2 h-4 w-4" />
-                                                     View Reports
+                                                     Reports
                                                 </Link>
                                             </Button>
-                                            <Button asChild>
+                                            <Button asChild size="sm">
                                                 <Link href={`/dashboard?patientId=${patient.id}&patientName=${encodeURIComponent(patient.patientName)}`}>
-                                                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                                                    Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>
                                             </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="destructive" size="icon" disabled={isDeleting === patient.id}>
+                                                        {isDeleting === patient.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert />Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                          This action cannot be undone. This will permanently delete the patient <span className="font-bold">{patient.patientName}</span> and all of their associated reports.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeletePatient(patient.id)} className="bg-destructive hover:bg-destructive/90">
+                                                            Yes, delete patient
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                     </CardContent>
                                 </Card>
